@@ -1,0 +1,118 @@
+import { CanActivate, ExecutionContext, forwardRef, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { IS_PUBLIC_KEY, ONLY_ANON_KEY, ROLES_KEY } from "../../static/decorators/auth.decorators";
+import { Role } from "../../static/enums/users.enum";
+import { ExceptionMessages } from "../../static/enums/messages.enums";
+import { Request } from "express";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { TOKEN_KEY } from "../../static/consts/token.const";
+import { UsersService } from "../../users/users.service";
+import { UserEntity } from "../../users/entities/user.entity";
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(
+    private reflector: Reflector,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+    @Inject(forwardRef(() => UsersService))
+    private usersService: UsersService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    let token = this.extractTokenFromHeader(request);
+    let payload;
+
+    if (token) {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get('SECRET_WORD'),
+      });
+      if (payload?.id) {
+        let user: UserEntity;
+        try {
+          user = await this.usersService.findById(payload.id);
+        } catch {
+          user = null;
+        }
+        if (user) {
+          request['user'] = user;
+          payload = user;
+        } else {
+          token = undefined;
+          payload = undefined;
+        }
+      }
+    }
+
+    const isPublic =
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || false;
+
+    if (isPublic) {
+      return true;
+    }
+
+    const onlyAnonymous =
+      this.reflector.getAllAndOverride<boolean>(ONLY_ANON_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || false;
+
+    if (onlyAnonymous) {
+      return !!(token === undefined || payload?.deletedAt);
+    }
+
+    if (!token) {
+      throw new UnauthorizedException(ExceptionMessages.Unauthorized);
+    }
+
+    if (payload?.deletedAt) {
+      throw new UnauthorizedException(ExceptionMessages.Unauthorized);
+    }
+
+    const requiredRoles =
+      this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) || [];
+
+    if (requiredRoles.length === 0) {
+      return true;
+    }
+
+    if (requiredRoles.includes(payload?.role) || payload?.role === Role.Admin) {
+      return true;
+    } else {
+      throw new UnauthorizedException(ExceptionMessages.Unauthorized);
+    }
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const cookieToken = this.getCookie(TOKEN_KEY, request.headers.cookie);
+
+    return cookieToken
+      ? cookieToken
+      : request.headers.authorization;
+  }
+
+  private getCookie(key: string, cookiesString: string) {
+    try {
+      const cookieArr = cookiesString.split(';');
+
+      for (let i = 0; i < cookieArr.length; i++) {
+        const cookiePair = cookieArr[i].split('=');
+        if (key === cookiePair[0].trim()) {
+          return decodeURIComponent(cookiePair[1]);
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+
+    return null;
+  }
+}

@@ -1,44 +1,56 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from "@nestjs/common";
-import { UsersService } from "./users.service";
-import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
-import { AuthGuard } from "../auth/guards/auth.guard.service";
-import { RolesList } from "../static/decorators/auth.decorators";
-import { Role } from "../static/enums/users.enum";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthGuard } from '../auth/guards/auth.guard.service';
+import { RolesList } from '../static/decorators/auth.decorators';
+import { Role } from '../static/enums/users.enum';
 
-@Controller("users")
+@Controller('users')
 @UseGuards(AuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {
-  }
+  constructor(private readonly usersService: UsersService) {}
 
-  @Post("create")
+  @Post('create')
   @RolesList(Role.Admin)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @Get("get_all")
+  @Get('get_all')
   @RolesList(Role.Admin)
   findAll() {
     return this.usersService.findAll();
   }
 
-  @Get(":id")
+  @Get(':id')
   @RolesList()
-  findById(@Param("id", ParseIntPipe) id: number) {
+  findById(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findById(id);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   @RolesList(Role.Admin)
-  update(@Param("id", ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @RolesList(Role.Admin)
-  remove(@Param("id", ParseIntPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }
 }

@@ -1,9 +1,9 @@
-import { forwardRef, Module } from "@nestjs/common";
-import { UsersService } from "./users.service";
-import { UsersController } from "./users.controller";
-import { OrdersModule } from "../orders/orders.module";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { UserEntity } from "./entities/user.entity";
+import { forwardRef, Module } from '@nestjs/common';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
+import { OrdersModule } from '../orders/orders.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from './entities/user.entity';
 
 @Module({
   controllers: [UsersController],
@@ -11,8 +11,7 @@ import { UserEntity } from "./entities/user.entity";
   exports: [UsersService],
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
-    forwardRef(() => OrdersModule)
-  ]
+    forwardRef(() => OrdersModule),
+  ],
 })
-export class UsersModule {
-}
+export class UsersModule {}

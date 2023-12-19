@@ -1,51 +1,64 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from "@nestjs/common";
-import { OrdersService } from "./orders.service";
-import { CreateOrderDto } from "./dto/create-order.dto";
-import { UpdateOrderDto } from "./dto/update-order.dto";
-import { AuthGuard } from "../auth/guards/auth.guard.service";
-import { RolesList } from "../static/decorators/auth.decorators";
-import { Role } from "../static/enums/users.enum";
-import { UserId } from "../static/decorators/user-id.decorator";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { OrdersService } from './orders.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { AuthGuard } from '../auth/guards/auth.guard.service';
+import { RolesList } from '../static/decorators/auth.decorators';
+import { Role } from '../static/enums/users.enum';
+import { UserId } from '../static/decorators/user-id.decorator';
 
-@Controller("orders")
+@Controller('orders')
 @UseGuards(AuthGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {
-  }
+  constructor(private readonly ordersService: OrdersService) {}
 
-  @Post("create")
+  @Post('create')
   @RolesList(Role.Worker)
   create(@UserId() userId: number, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(userId, createOrderDto);
   }
 
-  @Patch("take")
+  @Patch('take')
   @RolesList(Role.Deliver)
-  takeOrder(@Param("id", ParseIntPipe) id: number, @UserId() userId: number) {
+  takeOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
     return this.ordersService.takeOrder(id, userId);
   }
 
-  @Get("get_all")
+  @Get('get_all')
   @RolesList()
   findAll() {
     return this.ordersService.findAll();
   }
 
-  @Get(":id")
+  @Get(':id')
   @RolesList()
-  findOne(@Param("id", ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findOne(id);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   @RolesList(Role.Worker)
-  update(@Param("id", ParseIntPipe) id: number, @UserId() userId: number, @Body() updateOrderDto: UpdateOrderDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() userId: number,
+    @Body() updateOrderDto: UpdateOrderDto,
+  ) {
     return this.ordersService.update(id, userId, updateOrderDto);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @RolesList(Role.Worker)
-  remove(@Param("id", ParseIntPipe) id: number, @UserId() userId: number) {
+  remove(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
     return this.ordersService.remove(id, userId);
   }
 }

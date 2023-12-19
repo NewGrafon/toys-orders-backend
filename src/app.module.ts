@@ -8,7 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './users/entities/user.entity';
 import { OrderEntity } from './orders/entities/order.entity';
-import { LocalCacheModule } from './cache/localCacheModule';
+import { LocalCacheModule } from './cache/local-cache.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_PIPE } from '@nestjs/core';
 
@@ -20,7 +20,7 @@ import { APP_PIPE } from '@nestjs/core';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT) || 3306,
+      port: Number(process.env.DB_PORT) || 5432,
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,

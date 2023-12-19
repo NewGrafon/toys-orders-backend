@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { TOKEN_KEY } from '../../static/consts/token.const';
 import { UsersService } from '../../users/users.service';
 import { UserEntity } from '../../users/entities/user.entity';
+import { IPayload } from '../../static/interfaces/auth.interfaces';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -34,25 +35,21 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     let token = this.extractTokenFromHeader(request);
-    let payload;
+    let payload: IPayload;
+    let user: UserEntity;
 
     if (token) {
       payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get('SECRET_WORD'),
       });
       if (payload?.id) {
-        let user: UserEntity;
-        try {
-          user = await this.usersService.findById(payload.id);
-        } catch {
-          user = null;
-        }
-        if (user) {
+        user = await this.usersService.findById(payload.id);
+        if (user && new Date(user.updatedAt).getTime() === payload.updatedAt) {
           request['user'] = user;
-          payload = user;
         } else {
           token = undefined;
           payload = undefined;
+          user = undefined;
         }
       }
     }
@@ -74,14 +71,14 @@ export class AuthGuard implements CanActivate {
       ]) || false;
 
     if (onlyAnonymous) {
-      return !!(token === undefined || payload?.deletedAt);
+      return !!(token === undefined || user?.deletedAt);
     }
 
     if (!token) {
       throw new UnauthorizedException(ExceptionMessages.Unauthorized);
     }
 
-    if (payload?.deletedAt) {
+    if (user?.deletedAt) {
       throw new UnauthorizedException(ExceptionMessages.Unauthorized);
     }
 
@@ -95,7 +92,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    if (requiredRoles.includes(payload?.role) || payload?.role === Role.Admin) {
+    if (requiredRoles.includes(user?.role) || user?.role === Role.Admin) {
       return true;
     } else {
       throw new UnauthorizedException(ExceptionMessages.Unauthorized);

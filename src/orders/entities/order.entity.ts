@@ -4,7 +4,6 @@ import {
   DeleteDateColumn,
   Entity,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -34,7 +33,7 @@ export class OrderEntity {
   @Column({ type: 'varchar', length: 64, nullable: false })
   colorCode: string;
 
-  @Column({ type: 'tinyint', nullable: false, default: 1 })
+  @Column({ type: 'smallint', nullable: false, default: 1 })
   amount: number;
 
   @Column({ type: 'varchar', length: 64, nullable: false })

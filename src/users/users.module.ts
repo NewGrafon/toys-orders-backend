@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { OrdersModule } from '../orders/orders.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
+import { LocalCacheModule } from '../cache/local-cache.module';
 
 @Module({
   controllers: [UsersController],
@@ -12,6 +13,7 @@ import { UserEntity } from './entities/user.entity';
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
     forwardRef(() => OrdersModule),
+    LocalCacheModule,
   ],
 })
 export class UsersModule {}

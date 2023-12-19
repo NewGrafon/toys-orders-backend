@@ -1,3 +1,11 @@
-import { CreateUserDto } from './create-user.dto';
+import { Role } from '../../static/enums/users.enum';
 
-export class UpdateUserDto extends CreateUserDto {}
+export class UpdateUserDto {
+  firstname?: string;
+
+  lastname?: string;
+
+  password?: string;
+
+  role?: Role;
+}

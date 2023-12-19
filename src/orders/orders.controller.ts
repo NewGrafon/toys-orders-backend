@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
 import { AuthGuard } from '../auth/guards/auth.guard.service';
 import { RolesList } from '../static/decorators/auth.decorators';
 import { Role } from '../static/enums/users.enum';
@@ -28,10 +27,22 @@ export class OrdersController {
     return this.ordersService.create(userId, createOrderDto);
   }
 
-  @Patch('take')
+  @Patch('take/:id')
   @RolesList(Role.Deliver)
   takeOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
     return this.ordersService.takeOrder(id, userId);
+  }
+
+  @Patch('close/:id')
+  @RolesList(Role.Worker, Role.Deliver)
+  closeOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.ordersService.closeOrder(id, userId);
+  }
+
+  @Delete('cancel/:id')
+  @RolesList(Role.Worker)
+  cancelOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.ordersService.cancelOrder(id, userId);
   }
 
   @Get('get_all')
@@ -43,22 +54,6 @@ export class OrdersController {
   @Get(':id')
   @RolesList()
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.findOne(id);
-  }
-
-  @Patch(':id')
-  @RolesList(Role.Worker)
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @UserId() userId: number,
-    @Body() updateOrderDto: UpdateOrderDto,
-  ) {
-    return this.ordersService.update(id, userId, updateOrderDto);
-  }
-
-  @Delete(':id')
-  @RolesList(Role.Worker)
-  remove(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
-    return this.ordersService.remove(id, userId);
+    return this.ordersService.findOneById(id);
   }
 }

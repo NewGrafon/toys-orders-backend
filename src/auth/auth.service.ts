@@ -12,8 +12,8 @@ import {
   ResultMessages,
 } from '../static/enums/messages.enums';
 import { UserEntity } from '../users/entities/user.entity';
-import bcrypt from 'bcrypt';
-import { IAuthResponse } from '../static/interfaces/auth.interfaces';
+import * as bcrypt from 'bcrypt';
+import { IAuthResponse, IPayload } from '../static/interfaces/auth.interfaces';
 
 @Injectable()
 export class AuthService {
@@ -43,9 +43,9 @@ export class AuthService {
       }
     }
 
-    const payload = {
+    const payload: IPayload = {
       id: user.id,
-      sessionCreatedAt: new Date().getTime(),
+      updatedAt: new Date(existUser.updatedAt).getTime(),
     };
 
     return {

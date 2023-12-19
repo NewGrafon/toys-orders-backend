@@ -1,15 +1,15 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Role } from "../../static/enums/users.enum";
 
-@Entity('users')
+@Entity("users")
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 32, nullable: false })
+  @Column({ type: "varchar", length: 32, nullable: false })
   firstname: string;
 
-  @Column({ type: 'varchar', length: 32, nullable: false })
+  @Column({ type: "varchar", length: 32, nullable: false })
   lastname: string;
 
   @Column({ nullable: false, select: false })

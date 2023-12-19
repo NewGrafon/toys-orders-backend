@@ -4,7 +4,8 @@ import { Cache } from "cache-manager";
 
 @Injectable()
 export class LocalCacheService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
+  }
 
   readonly cacheKeys: object = {
     user: (id: string | number): string => {
@@ -18,7 +19,7 @@ export class LocalCacheService {
     },
     allOrders: (): string => {
       return `order-all`;
-    },
+    }
   } as const;
 
   async get(key: string): Promise<object | null> {
@@ -31,7 +32,7 @@ export class LocalCacheService {
   }
 
   async set(key: string, value: string, ttl?: number) {
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
       value = JSON.stringify(value);
     } else {
       value.toString();

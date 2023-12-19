@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable } from "@nestjs/common";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserEntity } from "./entities/user.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -14,28 +14,27 @@ export class UsersService {
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
     private readonly ordersService: OrdersService,
-    private readonly cacheService: LocalCacheService,
+    private readonly cacheService: LocalCacheService
   ) {
   }
 
   create(createUserDto: CreateUserDto) {
-
-    return '';
+    return "";
   }
 
   findAll(): Promise<UserEntity[]> {
-    return '';
+    return "";
   }
 
   async findById(id: number, withPassword?: boolean): Promise<UserEntity> {
-    return '';
+    return "";
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
-    return '';
+    return "";
   }
 
   remove(id: number) {
-    return '';
+    return "";
   }
 }

@@ -5,13 +5,13 @@ import { Role } from "../../static/enums/users.enum";
 export class CreateUserDto {
   @IsString()
   @Transform(({ value }) => {
-    return value.replace(/\s+/g, ' ').trim();
+    return value.replace(/\s+/g, " ").trim();
   })
   firstname: string;
 
   @IsString()
   @Transform(({ value }) => {
-    return value.replace(/\s+/g, ' ').trim();
+    return value.replace(/\s+/g, " ").trim();
   })
   lastname: string;
 

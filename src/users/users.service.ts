@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
@@ -6,6 +6,12 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OrdersService } from '../orders/orders.service';
 import { LocalCacheService } from '../cache/local-cache.service';
+import { ICacheKeys } from '../static/interfaces/cache.interfaces';
+import { ExceptionMessages } from '../static/enums/messages.enums';
+import * as bcrypt from 'bcrypt';
+import { BCRYPT_SALT } from '../static/consts/bcrypt.const';
+import { Role } from '../static/enums/users.enum';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
@@ -14,25 +20,150 @@ export class UsersService {
     private readonly repository: Repository<UserEntity>,
     private readonly ordersService: OrdersService,
     private readonly cacheService: LocalCacheService,
-  ) {}
-
-  create(createUserDto: CreateUserDto) {
-    return '';
+    private readonly configService: ConfigService,
+  ) {
+    this.repository
+      .findOneBy({
+        firstname: 'Администратор',
+        lastname: '',
+      })
+      .then((r) => {
+        const hashedPassword: string = bcrypt.hashSync(
+          configService.get('SECRET_WORD'),
+          BCRYPT_SALT,
+        );
+        if (!r) {
+          this.repository.insert({
+            firstname: 'Администратор',
+            lastname: '',
+            role: Role.Admin,
+            password: hashedPassword,
+          });
+        } else {
+          if (r.password !== hashedPassword) {
+            this.repository.update(
+              {
+                id: r.id,
+              },
+              {
+                password: hashedPassword,
+              },
+            );
+          }
+        }
+      });
   }
 
-  findAll(): Promise<UserEntity[]> {
-    return '';
+  readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
+
+  async create(createUserDto: CreateUserDto) {
+    const result = (await this.repository.insert(createUserDto))
+      .generatedMaps[0] as UserEntity;
+
+    await this.cacheService.del(this.cacheKeys.allUsers());
+
+    return this.findById(result.id);
   }
 
-  async findById(id: number, withPassword?: boolean): Promise<UserEntity> {
-    return '';
+  async findAll(): Promise<UserEntity[]> {
+    const cachedData = await this.cacheService.get(this.cacheKeys.allUsers());
+    if (cachedData) {
+      return <UserEntity[]>cachedData;
+    }
+
+    const users = await this.repository.find({
+      withDeleted: true,
+    });
+
+    await this.cacheService.set(this.cacheKeys.allUsers(), users, 900);
+
+    return users;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return '';
+  async findById(userId: number, withPassword?: boolean): Promise<UserEntity> {
+    if (!withPassword) {
+      const cachedData = await this.cacheService.get(
+        this.cacheKeys.user(userId),
+      );
+      if (cachedData) {
+        return <UserEntity>cachedData;
+      }
+    }
+
+    const user = await this.repository.findOne({
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        role: true,
+        password: withPassword ?? false,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+      where: {
+        id: userId,
+      },
+      withDeleted: true,
+    });
+
+    if (!withPassword) {
+      await this.cacheService.set(this.cacheKeys.user(userId), user);
+    }
+
+    return user;
   }
 
-  remove(id: number) {
-    return '';
+  async update(userId: number, updateUserDto: UpdateUserDto) {
+    let user: UserEntity;
+
+    const cachedData = await this.cacheService.get(this.cacheKeys.user(userId));
+    if (cachedData) {
+      user = <UserEntity>cachedData;
+    } else {
+      user = await this.repository.findOneBy({
+        id: userId,
+      });
+    }
+
+    if (!user) {
+      throw new ForbiddenException(ExceptionMessages.UserNotFound);
+    }
+
+    let hashedPassword: string;
+    if (updateUserDto.password) {
+      hashedPassword = await bcrypt.hash(updateUserDto.password, BCRYPT_SALT);
+      updateUserDto.password = hashedPassword;
+    }
+
+    const [result, ...cache] = await Promise.all([
+      this.repository.update(
+        {
+          id: userId,
+        },
+        {
+          firstname: updateUserDto.firstname ?? user.firstname,
+          lastname: updateUserDto.lastname ?? user.lastname,
+          role: updateUserDto.role ?? user.role,
+          password: updateUserDto.password ?? user.password,
+        },
+      ),
+      this.cacheService.del(this.cacheKeys.user(userId)),
+      this.cacheService.del(this.cacheKeys.allUsers()),
+    ]);
+
+    return this.findById(userId);
+  }
+
+  async remove(userId: number) {
+    await Promise.all([
+      this.repository.softDelete({
+        id: userId,
+      }),
+      this.cacheService.del(this.cacheKeys.user(userId)),
+      this.cacheService.del(this.cacheKeys.allUsers()),
+    ]);
+
+    return this.findById(userId);
   }
 }

@@ -15,6 +15,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/guards/auth.guard.service';
 import { RolesList } from '../static/decorators/auth.decorators';
 import { Role } from '../static/enums/users.enum';
+import { UserId } from '../static/decorators/user-id.decorator';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -25,6 +26,12 @@ export class UsersController {
   @RolesList(Role.Admin)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get('me')
+  @RolesList()
+  me(@UserId() userId: number) {
+    return this.usersService.findById(userId);
   }
 
   @Get('get_all')

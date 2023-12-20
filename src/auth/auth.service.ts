@@ -30,8 +30,9 @@ export class AuthService {
       true,
     );
 
-    if (!existUser)
-      throw new ForbiddenException(ExceptionMessages.SomethingWrong);
+    if (!existUser) {
+      throw new ForbiddenException(ExceptionMessages.UserNotFound);
+    }
 
     if (existUser) {
       if (existUser.deletedAt !== null) {

@@ -71,7 +71,7 @@ export class AuthGuard implements CanActivate {
       ]) || false;
 
     if (onlyAnonymous) {
-      return !!(token === undefined || user?.deletedAt);
+      return !!(token === undefined || token?.length === 0 || user?.deletedAt);
     }
 
     if (!token) {

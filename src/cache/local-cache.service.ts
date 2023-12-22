@@ -24,10 +24,16 @@ export class LocalCacheService {
     };
   };
 
-  async get(key: string): Promise<object | null> {
+  async get(key: string): Promise<object | string | null> {
     const cachedData = await this.cacheManager.get(key);
     if (cachedData) {
-      return JSON.parse(<string>cachedData);
+      try {
+        const json = JSON.parse(<string>cachedData);
+        return json;
+      } catch {
+        return <string>cachedData.toString();
+      }
+
     } else {
       return null;
     }

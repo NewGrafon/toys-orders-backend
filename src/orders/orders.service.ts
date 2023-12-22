@@ -34,7 +34,7 @@ export class OrdersService {
     return this.findOneById(result.id);
   }
 
-  async takeOrder(orderId: number, userId: number): Promise<OrderEntity> {
+  async takeOrder(orderId: number, userId: number): Promise<boolean> {
     const order = await this.findOneById(orderId);
 
     if (order && order.takenBy?.id !== undefined) {
@@ -57,10 +57,10 @@ export class OrdersService {
       this.cacheService.get(this.cacheKeys.allOrders()),
     ]);
 
-    return this.findOneById(orderId);
+    return true;
   }
 
-  async closeOrder(orderId: number, userId: number) {
+  async closeOrder(orderId: number, isFinishedNotCancel: boolean, userId: number) {
     const order = await this.findOneById(orderId);
 
     if (
@@ -72,12 +72,12 @@ export class OrdersService {
     }
 
     await Promise.all([
-      this.repository.update({ id: orderId }, { isClosed: true }),
+      this.repository.update({ id: orderId }, { isClosed: isFinishedNotCancel, takenBy: isFinishedNotCancel ? order.takenBy : null }),
       this.cacheService.get(this.cacheKeys.order(orderId)),
       this.cacheService.get(this.cacheKeys.allOrders()),
     ]);
 
-    return this.findOneById(orderId);
+    return true;
   }
 
   async cancelOrder(orderId: number, userId: number) {
@@ -93,7 +93,7 @@ export class OrdersService {
       this.cacheService.get(this.cacheKeys.allOrders()),
     ]);
 
-    return this.findOneById(orderId);
+    return true;
   }
 
   async findAll(): Promise<OrderEntity[]> {
@@ -113,9 +113,9 @@ export class OrdersService {
     orders = orders.map((order) => {
       // @ts-ignore
       order.takenBy = {
-        id: order.takenBy.id,
-        firstname: order.takenBy.firstname,
-        lastname: order.takenBy.lastname,
+        id: order?.takenBy?.id,
+        firstname: order?.takenBy?.firstname,
+        lastname: order?.takenBy?.lastname,
       };
 
       // @ts-ignore
@@ -158,16 +158,16 @@ export class OrdersService {
 
     // @ts-ignore
     order.takenBy = {
-      id: order.takenBy.id,
-      firstname: order.takenBy.firstname,
-      lastname: order.takenBy.lastname,
+      id: order.takenBy?.id,
+      firstname: order.takenBy?.firstname,
+      lastname: order.takenBy?.lastname,
     };
 
     // @ts-ignore
     order.creator = {
-      id: order?.creator?.id,
-      firstname: order?.creator?.firstname,
-      lastname: order?.creator?.lastname,
+      id: order?.creator.id,
+      firstname: order?.creator.firstname,
+      lastname: order?.creator.lastname,
     };
 
     await this.cacheService.set(this.cacheKeys.order(orderId), order);

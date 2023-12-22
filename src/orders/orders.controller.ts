@@ -3,7 +3,7 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
+  Param, ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -21,7 +21,7 @@ import { UserId } from '../static/decorators/user-id.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Post('create')
+  @Post('')
   @RolesList(Role.Worker)
   create(@UserId() userId: number, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(userId, createOrderDto);
@@ -33,10 +33,10 @@ export class OrdersController {
     return this.ordersService.takeOrder(id, userId);
   }
 
-  @Patch('close/:id')
+  @Patch('close/:id/:isFinishedNotCancel')
   @RolesList(Role.Worker, Role.Deliver)
-  closeOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
-    return this.ordersService.closeOrder(id, userId);
+  closeOrder(@Param('id', ParseIntPipe) id: number, @Param('isFinishedNotCancel', ParseBoolPipe) isFinishedNotCancel: boolean, @UserId() userId: number) {
+    return this.ordersService.closeOrder(id, isFinishedNotCancel, userId);
   }
 
   @Delete('cancel/:id')

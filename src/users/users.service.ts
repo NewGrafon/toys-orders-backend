@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
@@ -56,15 +56,6 @@ export class UsersService {
 
   readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
 
-  async create(createUserDto: CreateUserDto) {
-    const result = (await this.repository.insert(createUserDto))
-      .generatedMaps[0] as UserEntity;
-
-    await this.cacheService.del(this.cacheKeys.allUsers());
-
-    return this.findById(result.id);
-  }
-
   async findAll(): Promise<UserEntity[]> {
     const cachedData = await this.cacheService.get(this.cacheKeys.allUsers());
     if (cachedData) {
@@ -112,6 +103,23 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async create(createUserDto: CreateUserDto) {
+    let hashedPassword: string;
+    if (createUserDto.password) {
+      hashedPassword = await bcrypt.hash(createUserDto.password, BCRYPT_SALT);
+      createUserDto.password = hashedPassword;
+    } else {
+      throw new BadRequestException(ExceptionMessages.SomethingWrong);
+    }
+
+    const result = (await this.repository.insert(createUserDto))
+      .generatedMaps[0] as UserEntity;
+
+    await this.cacheService.del(this.cacheKeys.allUsers());
+
+    return this.findById(result.id);
   }
 
   async update(userId: number, updateUserDto: UpdateUserDto) {

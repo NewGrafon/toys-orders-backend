@@ -4,6 +4,7 @@ export enum ExceptionMessages {
   Authorized = 'Пользователь уже авторизован!',
   UserNotFound = 'Пользователь не найден.',
   OrderNotFound = 'Заказ не найден.',
+  OrderAlreadyTaken = 'Заказ уже взят другим пользователем.',
 }
 
 export enum ResultMessages {

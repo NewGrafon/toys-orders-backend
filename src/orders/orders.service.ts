@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderEntity } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,6 +35,12 @@ export class OrdersService {
   }
 
   async takeOrder(orderId: number, userId: number): Promise<OrderEntity> {
+    const order = await this.findOneById(orderId);
+
+    if (order && order.takenBy?.id !== undefined) {
+      throw new BadRequestException(ExceptionMessages.OrderAlreadyTaken);
+    }
+
     await this.repository.update(
       {
         id: orderId,

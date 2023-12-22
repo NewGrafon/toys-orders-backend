@@ -64,6 +64,9 @@ export class UsersService {
 
     const users = await this.repository.find({
       withDeleted: true,
+      order: {
+        createdAt: 'DESC',
+      }
     });
 
     await this.cacheService.set(this.cacheKeys.allUsers(), users, 900);

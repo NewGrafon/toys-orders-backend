@@ -25,6 +25,9 @@ export class OrderEntity {
   takenBy: UserEntity;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
+  codeName: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: false })
   code: string;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
@@ -41,6 +44,9 @@ export class OrderEntity {
 
   @Column({ type: 'boolean', nullable: false, default: false })
   isClosed: boolean;
+
+  // @Column({ type: 'boolean', nullable: false, default: true })
+  // closedResult: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

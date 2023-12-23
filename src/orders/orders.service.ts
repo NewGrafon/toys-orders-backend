@@ -53,8 +53,8 @@ export class OrdersService {
     );
 
     await Promise.all([
-      this.cacheService.get(this.cacheKeys.order(orderId)),
-      this.cacheService.get(this.cacheKeys.allOrders()),
+      this.cacheService.del(this.cacheKeys.order(orderId)),
+      this.cacheService.del(this.cacheKeys.allOrders()),
     ]);
 
     return true;
@@ -73,8 +73,8 @@ export class OrdersService {
 
     await Promise.all([
       this.repository.update({ id: orderId }, { isClosed: isFinishedNotCancel, takenBy: isFinishedNotCancel ? order.takenBy : null }),
-      this.cacheService.get(this.cacheKeys.order(orderId)),
-      this.cacheService.get(this.cacheKeys.allOrders()),
+      this.cacheService.del(this.cacheKeys.order(orderId)),
+      this.cacheService.del(this.cacheKeys.allOrders()),
     ]);
 
     return true;
@@ -89,8 +89,8 @@ export class OrdersService {
 
     await Promise.all([
       this.repository.softDelete({ id: orderId }),
-      this.cacheService.get(this.cacheKeys.order(orderId)),
-      this.cacheService.get(this.cacheKeys.allOrders()),
+      this.cacheService.del(this.cacheKeys.order(orderId)),
+      this.cacheService.del(this.cacheKeys.allOrders()),
     ]);
 
     return true;

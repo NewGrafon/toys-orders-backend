@@ -6,7 +6,7 @@ import * as redisStore from 'cache-manager-redis-store';
 @Module({
   imports: [
     CacheModule.register({
-      ttl: 60,
+      ttl: 120,
       store: redisStore,
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT) || 6379,

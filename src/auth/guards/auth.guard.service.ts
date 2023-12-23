@@ -30,7 +30,7 @@ export class AuthGuard implements CanActivate {
     private configService: ConfigService,
     @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -39,9 +39,14 @@ export class AuthGuard implements CanActivate {
     let user: UserEntity;
 
     if (token) {
-      payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('SECRET_WORD'),
-      });
+      try {
+        payload = await this.jwtService.verifyAsync(token, {
+          secret: this.configService.get('SECRET_WORD'),
+        });
+      } catch (e) {
+        console.error(e);
+        payload = undefined;
+      }
       if (payload?.id) {
         user = await this.usersService.findById(payload.id);
         if (user && new Date(user.updatedAt).getTime() === payload.updatedAt) {

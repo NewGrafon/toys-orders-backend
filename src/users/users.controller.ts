@@ -46,7 +46,7 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
-  @Patch(':id')
+  @Patch('edit/:id')
   @RolesList(Role.Admin)
   update(
     @Param('id', ParseIntPipe) id: number,

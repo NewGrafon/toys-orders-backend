@@ -1,7 +1,13 @@
-import { IsString } from '@nestjs/class-validator';
+import { IsString, Min, IsInt } from '@nestjs/class-validator';
 import { Transform } from '@nestjs/class-transformer';
 
 export class CreateOrderDto {
+  @IsString()
+  @Transform(({ value }) => {
+    return value.replace(/\s+/g, ' ').trim();
+  })
+  partName: string;
+  
   @IsString()
   @Transform(({ value }) => {
     return value.replace(/\s+/g, ' ').trim();
@@ -19,6 +25,10 @@ export class CreateOrderDto {
     return value.replace(/\s+/g, ' ').trim();
   })
   colorCode: string;
+
+  @IsInt()
+  @Min(1)
+  amount: number;
 
   @IsString()
   @Transform(({ value }) => {

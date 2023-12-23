@@ -13,6 +13,9 @@ export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: 'float', nullable: true, default: null })
+  telegramId?: number;
+
   @Column({ type: 'varchar', length: 32, nullable: false })
   firstname: string;
 

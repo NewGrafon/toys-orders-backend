@@ -25,7 +25,7 @@ export class OrderEntity {
   takenBy: UserEntity;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
-  codeName: string;
+  partName: string;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
   code: string;

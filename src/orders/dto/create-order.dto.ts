@@ -1,7 +1,14 @@
-import { IsString, Min, IsInt } from '@nestjs/class-validator';
+import { IsString, Min, IsInt, MaxLength } from '@nestjs/class-validator';
 import { Transform } from '@nestjs/class-transformer';
 
 export class CreateOrderDto {
+    // @IsString()
+    // @Transform(({ value }) => {
+    //   return value.replace(/\s+/g, ' ').trim();
+    // })
+    // @MaxLength(5000)
+    // fullText: string;
+
   @IsString()
   @Transform(({ value }) => {
     return value.replace(/\s+/g, ' ').trim();

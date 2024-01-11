@@ -24,6 +24,9 @@ export class OrderEntity {
   })
   takenBy: UserEntity;
 
+  // @Column({ type: 'text', nullable: false })
+  // fullText: string;
+
   @Column({ type: 'varchar', length: 64, nullable: false })
   partName: string;
 

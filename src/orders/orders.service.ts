@@ -29,7 +29,7 @@ export class OrdersService {
     const result = (await this.repository.insert(createOrderDto))
       .generatedMaps[0] as OrderEntity;
 
-    await this.cacheService.del(this.cacheKeys.order(result.id));
+    await this.cacheService.del(this.cacheKeys.allOrders());
 
     return this.findOneById(result.id);
   }

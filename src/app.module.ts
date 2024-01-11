@@ -11,6 +11,7 @@ import { OrderEntity } from './orders/entities/order.entity';
 import { LocalCacheModule } from './cache/local-cache.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_PIPE } from '@nestjs/core';
+import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { APP_PIPE } from '@nestjs/core';
     UsersModule,
     AuthModule,
     LocalCacheModule,
+    TelegramBotModule,
   ],
   controllers: [AppController],
   providers: [

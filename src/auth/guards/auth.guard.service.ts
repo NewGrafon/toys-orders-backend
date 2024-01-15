@@ -44,11 +44,14 @@ export class AuthGuard implements CanActivate {
           secret: this.configService.get('SECRET_WORD'),
         });
       } catch (e) {
-        console.error(e);
+        // console.error(e);
+        user = undefined;
+        token = undefined;
         payload = undefined;
       }
       if (payload?.id) {
         user = await this.usersService.findById(payload.id);
+        
         if (user && new Date(user.updatedAt).getTime() === payload.updatedAt) {
           request['user'] = user;
         } else {
@@ -58,7 +61,7 @@ export class AuthGuard implements CanActivate {
         }
       }
     }
-
+    
     const isPublic =
       this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
         context.getHandler(),
@@ -79,7 +82,7 @@ export class AuthGuard implements CanActivate {
       return !!(token === undefined || token?.length === 0 || user?.deletedAt);
     }
 
-    if (!token) {
+    if (!payload || !user) {
       throw new UnauthorizedException(ExceptionMessages.Unauthorized);
     }
 

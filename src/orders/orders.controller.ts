@@ -51,9 +51,17 @@ export class OrdersController {
     return this.ordersService.findAll();
   }
 
+  @Get('colors_info')
+  @RolesList()
+  getColorsInfo() {
+    return this.ordersService.getColorsInfo();
+  }
+
   @Get(':id')
   @RolesList()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findOneById(id);
   }
+
+
 }

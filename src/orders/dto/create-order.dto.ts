@@ -25,12 +25,6 @@ export class CreateOrderDto {
   @Transform(({ value }) => {
     return value.replace(/\s+/g, ' ').trim();
   })
-  color: string;
-
-  @IsString()
-  @Transform(({ value }) => {
-    return value.replace(/\s+/g, ' ').trim();
-  })
   colorCode: string;
 
   @IsInt()

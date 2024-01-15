@@ -34,9 +34,6 @@ export class OrderEntity {
   code: string;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
-  color: string;
-
-  @Column({ type: 'varchar', length: 64, nullable: false })
   colorCode: string;
 
   @Column({ type: 'smallint', nullable: false, default: 1 })

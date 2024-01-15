@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { LocalCacheService } from '../cache/local-cache.service';
 import { ICacheKeys } from '../static/interfaces/cache.interfaces';
 import { ExceptionMessages } from '../static/enums/messages.enums';
+import { ColorCode } from 'src/static/enums/colors-codes.enum';
 
 @Injectable()
 export class OrdersService {
@@ -173,5 +174,16 @@ export class OrdersService {
     await this.cacheService.set(this.cacheKeys.order(orderId), order);
 
     return order;
+  }
+
+  getColorsInfo() {
+    const values = Object.keys(ColorCode);
+    const keys = Object.values(ColorCode);
+    const result = {};
+    for (let i = 0; i < keys.length / 2; i++) {
+      result[keys[i]] = values[i];
+    }
+
+    return result;
   }
 }

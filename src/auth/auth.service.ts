@@ -14,13 +14,15 @@ import {
 import { UserEntity } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { IAuthResponse, IPayload } from '../static/interfaces/auth.interfaces';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(forwardRef(() => UsersService))
-    private usersService: UsersService,
-    private jwtService: JwtService,
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async login(user: LoginDto): Promise<IAuthResponse> {
@@ -48,9 +50,10 @@ export class AuthService {
       id: user.id,
       updatedAt: new Date(existUser.updatedAt).getTime(),
     };
-
+    
     return {
       session_token: await this.jwtService.signAsync(payload),
+      expiresIn: this.configService.get('EXPIRES_IN'),
     };
   }
 }

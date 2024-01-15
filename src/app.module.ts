@@ -35,6 +35,7 @@ import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
       useFactory: async (configService: ConfigService) => {
         return {
           secret: configService.get('SECRET_WORD'),
+          // ignoreExpiration: true,
           signOptions: { expiresIn: configService.get('EXPIRES_IN') },
         };
       },

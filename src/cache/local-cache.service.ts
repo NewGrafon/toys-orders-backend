@@ -7,6 +7,7 @@ import { ICacheKeys } from '../static/interfaces/cache.interfaces';
 export class LocalCacheService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
   public readonly cacheKeys: Function = (): ICacheKeys => {
     return {
       user: (id: string | number): string => {
@@ -15,8 +16,17 @@ export class LocalCacheService {
       allUsers: (): string => {
         return `user-all`;
       },
-      order: (id: string | number): string => {
-        return `order-${id}`;
+      toy: (id: string | number): string => {
+        return `toy-${id}`;
+      },
+      allToys: (): string => {
+        return `toy-all`;
+      },
+      orderByCartTimestamp: (cartTimestamp: string | number): string => {
+        return `order-timestamp-${cartTimestamp}`;
+      },
+      orderById: (id: string | number): string => {
+        return `order-id-${id}`;
       },
       allOrders: (): string => {
         return `order-all`;
@@ -33,7 +43,6 @@ export class LocalCacheService {
       } catch {
         return <string>cachedData.toString();
       }
-
     } else {
       return null;
     }

@@ -3,7 +3,13 @@ export interface ICacheKeys {
 
   allUsers(): string;
 
-  order(id: string | number): string;
+  toy(id: string | number): string;
+
+  allToys(): string;
+
+  orderByCartTimestamp(cartTimestamp: string | number): string;
+
+  orderById(id: string | number): string;
 
   allOrders(): string;
 }

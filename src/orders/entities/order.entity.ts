@@ -8,11 +8,16 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from '../../users/entities/user.entity';
+import { ToyEntity } from 'src/toys/entities/toy.entity';
+import { ColorCode } from 'src/static/enums/colors-codes.enum';
 
 @Entity('orders')
 export class OrderEntity {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'timestamp', nullable: false, unique: false })
+  cartTimestamp: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id, {
     onDelete: 'CASCADE',
@@ -27,14 +32,13 @@ export class OrderEntity {
   // @Column({ type: 'text', nullable: false })
   // fullText: string;
 
-  @Column({ type: 'varchar', length: 64, nullable: false })
-  partName: string;
+  @ManyToOne(() => ToyEntity, (toy) => toy.id, {
+    onDelete: 'CASCADE',
+  })
+  toy: ToyEntity;
 
   @Column({ type: 'varchar', length: 64, nullable: false })
-  code: string;
-
-  @Column({ type: 'varchar', length: 64, nullable: false })
-  colorCode: string;
+  colorCode: ColorCode;
 
   @Column({ type: 'smallint', nullable: false, default: 1 })
   amount: number;

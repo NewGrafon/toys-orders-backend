@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from '../../static/enums/users.enum';
+import { CartToyDto } from 'src/orders/dto/cart-toy.dto';
 
 @Entity('users')
 export class UserEntity {
@@ -27,6 +28,9 @@ export class UserEntity {
 
   @Column({ nullable: false, default: Role.Worker })
   role: Role;
+
+  @Column({ type: 'jsonb', nullable: true, default: [] })
+  cart: CartToyDto[];
 
   @CreateDateColumn()
   createdAt: Date;

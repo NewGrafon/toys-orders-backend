@@ -3,48 +3,83 @@ import {
   Controller,
   Delete,
   Get,
-  Param, ParseBoolPipe,
+  Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto } from './dto/create-order.dto';
 import { AuthGuard } from '../auth/guards/auth.guard.service';
 import { RolesList } from '../static/decorators/auth.decorators';
 import { Role } from '../static/enums/users.enum';
 import { UserId } from '../static/decorators/user-id.decorator';
+import { CreateCartDto } from './dto/create-cart.dto';
+import { CartToyDto as CartToyDto } from './dto/cart-toy.dto';
 
 @Controller('orders')
 @UseGuards(AuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Post('')
+  // need test
+  @Post('change_in_cart')
   @RolesList(Role.Worker)
-  create(@UserId() userId: number, @Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(userId, createOrderDto);
+  changeAmountInCart(@UserId() userId: number, @Body() cartToyDto: CartToyDto) {
+    return this.ordersService.changeAmountInCart(userId, cartToyDto);
   }
 
-  @Patch('take/:id')
+  // need test
+  @Delete('delete_from_cart')
+  @RolesList(Role.Worker)
+  removeFromCart(@UserId() userId: number, @Body() cartToyDto: CartToyDto) {
+    return this.ordersService.removeFromCart(userId, cartToyDto);
+  }
+
+  // need test
+  @Post('confirm_cart')
+  @RolesList(Role.Worker)
+  confirmCart(@UserId() userId: number, @Body() createCartDto: CreateCartDto) {
+    return this.ordersService.confirmCart(userId, createCartDto);
+  }
+
+  // need test
+  @Patch('take/:cartTimestamp')
   @RolesList(Role.Deliver)
-  takeOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
-    return this.ordersService.takeOrder(id, userId);
+  takeOrders(
+    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @UserId() userId: number,
+  ) {
+    return this.ordersService.takeOrders(userId, cartTimestamp);
   }
 
-  @Patch('close/:id/:isFinishedNotCancel')
+  // need test
+  @Patch('close/:cartTimestamp/:isFinishedNotCancel')
   @RolesList(Role.Worker, Role.Deliver)
-  closeOrder(@Param('id', ParseIntPipe) id: number, @Param('isFinishedNotCancel', ParseBoolPipe) isFinishedNotCancel: boolean, @UserId() userId: number) {
-    return this.ordersService.closeOrder(id, isFinishedNotCancel, userId);
+  closeOrders(
+    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @Param('isFinishedNotCancel', ParseBoolPipe) isFinishedNotCancel: boolean,
+    @UserId() userId: number,
+  ) {
+    return this.ordersService.closeOrders(
+      cartTimestamp,
+      isFinishedNotCancel,
+      userId,
+    );
   }
 
-  @Delete('cancel/:id')
+  // need test
+  @Delete('cancel/:cartTimestamp')
   @RolesList(Role.Worker)
-  cancelOrder(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
-    return this.ordersService.cancelOrder(id, userId);
+  cancelOrders(
+    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @UserId() userId: number,
+  ) {
+    return this.ordersService.cancelOrder(cartTimestamp, userId);
   }
 
+  // need test
   @Get('get_all')
   @RolesList()
   findAll() {
@@ -57,11 +92,10 @@ export class OrdersController {
     return this.ordersService.getColorsInfo();
   }
 
+  // need test
   @Get(':id')
   @RolesList()
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findOneById(id);
   }
-
-
 }

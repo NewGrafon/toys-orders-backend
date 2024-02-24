@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
@@ -12,6 +16,8 @@ import * as bcrypt from 'bcrypt';
 import { BCRYPT_SALT } from '../static/consts/bcrypt.const';
 import { Role } from '../static/enums/users.enum';
 import { ConfigService } from '@nestjs/config';
+import { CartToyDto } from 'src/orders/dto/cart-toy.dto';
+import { ToysService } from 'src/toys/toys.service';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +27,7 @@ export class UsersService {
     private readonly ordersService: OrdersService,
     private readonly cacheService: LocalCacheService,
     private readonly configService: ConfigService,
+    private readonly toysService: ToysService,
   ) {
     this.repository
       .findOneBy({
@@ -56,6 +63,100 @@ export class UsersService {
 
   readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
 
+  async changeAmountInCart(
+    userId: number,
+    cartToyDto: CartToyDto,
+  ): Promise<UserEntity> {
+    if (cartToyDto.amount === 0) {
+      throw new BadRequestException(ExceptionMessages.ToyAmountIncorrect);
+    }
+
+    const toy = await this.toysService.findOne(cartToyDto.id);
+
+    if (!toy) {
+      throw new ForbiddenException(ExceptionMessages.ToyNotFound);
+    }
+
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new ForbiddenException(ExceptionMessages.UserNotFound);
+    }
+
+    if (
+      typeof user.cart !== 'object' ||
+      user.cart === undefined ||
+      user.cart === null
+    ) {
+      user.cart = [];
+    }
+
+    let toyExistInArray: boolean = false;
+    user.cart.every((cartToy: CartToyDto, index: number) => {
+      if (
+        cartToy.id === cartToyDto.id &&
+        cartToy.colorCode === cartToyDto.colorCode
+      ) {
+        user[index].amount += cartToyDto.amount;
+        toyExistInArray = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (!toyExistInArray && cartToyDto.amount > 0) {
+      user.cart.push(cartToyDto);
+    }
+
+    const updatedUser = await this.repository.save(user);
+
+    await Promise.all([this.cacheService.del(this.cacheKeys.user(userId))]);
+
+    return updatedUser;
+  }
+
+  async removeFromCart(
+    userId: number,
+    cartToyDto: CartToyDto,
+  ): Promise<UserEntity> {
+    const toy = await this.toysService.findOne(cartToyDto.id);
+
+    if (!toy) {
+      throw new ForbiddenException(ExceptionMessages.ToyNotFound);
+    }
+
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new ForbiddenException(ExceptionMessages.UserNotFound);
+    }
+
+    if (
+      typeof user.cart !== 'object' ||
+      user.cart === undefined ||
+      user.cart === null
+    ) {
+      user.cart = [];
+      return this.repository.save(user);
+    }
+
+    user.cart = user.cart.filter((cartToy: CartToyDto) => {
+      if (
+        cartToy.id === cartToyDto.id &&
+        cartToy.colorCode === cartToyDto.colorCode
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    const updatedUser = await this.repository.save(user);
+
+    await Promise.all([this.cacheService.del(this.cacheKeys.user(userId))]);
+
+    return updatedUser;
+  }
+
   async findAll(): Promise<UserEntity[]> {
     const cachedData = await this.cacheService.get(this.cacheKeys.allUsers());
     if (cachedData) {
@@ -63,10 +164,13 @@ export class UsersService {
     }
 
     const users = await this.repository.find({
+      // relations: {
+      //   cart: true,
+      // },
       withDeleted: true,
       order: {
         createdAt: 'DESC',
-      }
+      },
     });
 
     await this.cacheService.set(this.cacheKeys.allUsers(), users, 900);
@@ -85,11 +189,15 @@ export class UsersService {
     }
 
     const user = await this.repository.findOne({
+      // relations: {
+      //   cart: true,
+      // },
       select: {
         id: true,
         firstname: true,
         lastname: true,
         role: true,
+        cart: true,
         password: withPassword ?? false,
         createdAt: true,
         updatedAt: true,
@@ -147,7 +255,7 @@ export class UsersService {
       updateUserDto.password = hashedPassword;
     }
 
-    const [result, ...cache] = await Promise.all([
+    await Promise.all([
       this.repository.update(
         {
           id: userId,

@@ -12,6 +12,7 @@ import { LocalCacheModule } from './cache/local-cache.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_PIPE } from '@nestjs/core';
 import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
+import { ToysModule } from './toys/toys.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
     AuthModule,
     LocalCacheModule,
     TelegramBotModule,
+    ToysModule,
   ],
   controllers: [AppController],
   providers: [

@@ -13,6 +13,7 @@ import { LocalCacheModule } from '../cache/local-cache.module';
     TypeOrmModule.forFeature([OrderEntity]),
     forwardRef(() => UsersModule),
     LocalCacheModule,
+    UsersModule,
   ],
   exports: [OrdersService],
 })

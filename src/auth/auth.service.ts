@@ -50,7 +50,7 @@ export class AuthService {
       id: user.id,
       updatedAt: new Date(existUser.updatedAt).getTime(),
     };
-    
+
     return {
       session_token: await this.jwtService.signAsync(payload),
       expiresIn: this.configService.get('EXPIRES_IN'),

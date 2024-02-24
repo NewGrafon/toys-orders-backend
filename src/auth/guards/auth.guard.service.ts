@@ -30,7 +30,7 @@ export class AuthGuard implements CanActivate {
     private configService: ConfigService,
     @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -51,7 +51,7 @@ export class AuthGuard implements CanActivate {
       }
       if (payload?.id) {
         user = await this.usersService.findById(payload.id);
-        
+
         if (user && new Date(user.updatedAt).getTime() === payload.updatedAt) {
           request['user'] = user;
         } else {
@@ -61,7 +61,7 @@ export class AuthGuard implements CanActivate {
         }
       }
     }
-    
+
     const isPublic =
       this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
         context.getHandler(),

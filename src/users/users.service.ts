@@ -108,11 +108,12 @@ export class UsersService {
       user.cart.push(cartToyDto);
     }
 
-    const updatedUser = await this.repository.save(user);
+    await Promise.all([
+      this.repository.save(user),
+      this.cacheService.del(this.cacheKeys.user(userId)),
+    ]);
 
-    await Promise.all([this.cacheService.del(this.cacheKeys.user(userId))]);
-
-    return updatedUser;
+    return this.findById(userId);
   }
 
   async removeFromCart(
@@ -150,11 +151,12 @@ export class UsersService {
       return true;
     });
 
-    const updatedUser = await this.repository.save(user);
+    await Promise.all([
+      this.repository.save(user),
+      this.cacheService.del(this.cacheKeys.user(userId)),
+    ]);
 
-    await Promise.all([this.cacheService.del(this.cacheKeys.user(userId))]);
-
-    return updatedUser;
+    return this.findById(userId);
   }
 
   async findAll(): Promise<UserEntity[]> {

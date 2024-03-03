@@ -2,7 +2,9 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
+  forwardRef,
 } from '@nestjs/common';
 import { OrderEntity } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +24,7 @@ export class OrdersService {
     @InjectRepository(OrderEntity)
     private readonly repository: Repository<OrderEntity>,
     private readonly cacheService: LocalCacheService,
+    @Inject(forwardRef(() => UsersService))
     private readonly usersSerice: UsersService,
   ) {}
 

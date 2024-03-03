@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from '../../users/entities/user.entity';
-import { ToyEntity } from 'src/toys/entities/toy.entity';
+import { ToyEntity } from '../../toys/entities/toy.entity';
 import { ColorCode } from 'src/static/enums/colors-codes.enum';
 
 @Entity('orders')

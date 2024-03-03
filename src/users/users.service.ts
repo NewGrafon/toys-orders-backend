@@ -1,14 +1,15 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { OrdersService } from '../orders/orders.service';
 import { LocalCacheService } from '../cache/local-cache.service';
 import { ICacheKeys } from '../static/interfaces/cache.interfaces';
 import { ExceptionMessages } from '../static/enums/messages.enums';
@@ -24,9 +25,9 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
-    private readonly ordersService: OrdersService,
     private readonly cacheService: LocalCacheService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => ToysService))
     private readonly toysService: ToysService,
   ) {
     this.repository

@@ -13,6 +13,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_PIPE } from '@nestjs/core';
 import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
 import { ToysModule } from './toys/toys.module';
+import { ToyEntity } from './toys/entities/toy.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { ToysModule } from './toys/toys.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [UserEntity, OrderEntity],
+      entities: [UserEntity, OrderEntity, ToyEntity],
       synchronize: true,
     }),
     JwtModule.registerAsync({
@@ -43,10 +44,10 @@ import { ToysModule } from './toys/toys.module';
     }),
     OrdersModule,
     UsersModule,
+    ToysModule,
     AuthModule,
     LocalCacheModule,
     TelegramBotModule,
-    ToysModule,
   ],
   controllers: [AppController],
   providers: [

@@ -19,10 +19,10 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(forwardRef(() => UsersService))
-    private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
   ) {}
 
   async login(user: LoginDto): Promise<IAuthResponse> {

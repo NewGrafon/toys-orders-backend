@@ -29,7 +29,7 @@ export class AuthGuard implements CanActivate {
     private jwtService: JwtService,
     private configService: ConfigService,
     @Inject(forwardRef(() => UsersService))
-    private usersService: UsersService,
+    private readonly usersService: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

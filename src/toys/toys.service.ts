@@ -24,7 +24,7 @@ export class ToysService {
       },
     });
 
-    if (exists.id) {
+    if (exists?.id) {
       throw new ForbiddenException(ExceptionMessages.ToyExists);
     }
 

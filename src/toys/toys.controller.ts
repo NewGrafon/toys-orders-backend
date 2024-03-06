@@ -32,7 +32,7 @@ export class ToysController {
     return this.toysService.findOne(id);
   }
 
-  @Post()
+  @Post('create')
   @RolesList(Role.Worker)
   create(@Body() createToyDto: CreateToyDto): Promise<ToyEntity> {
     return this.toysService.create(createToyDto);

@@ -93,12 +93,16 @@ export class UsersService {
     }
 
     let toyExistInArray: boolean = false;
+    let amountIsZeroOrBelow: boolean = false;
     user.cart.every((cartToy: CartToyDto, index: number) => {
       if (
         cartToy.id === cartToyDto.id &&
         cartToy.colorCode === cartToyDto.colorCode
       ) {
         user.cart[index].amount += cartToyDto.amount;
+        if (user.cart[index].amount <= 0) {
+          amountIsZeroOrBelow = true;
+        }
         toyExistInArray = true;
         return false;
       }
@@ -111,6 +115,10 @@ export class UsersService {
 
     await this.repository.save(user);
     await this.cacheService.del(this.cacheKeys.user(userId));
+
+    if (amountIsZeroOrBelow) {
+      return this.removeFromCart(userId, cartToyDto);
+    }
 
     return this.findById(userId);
   }

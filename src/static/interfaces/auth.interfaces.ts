@@ -5,5 +5,5 @@ export interface IAuthResponse {
 
 export interface IPayload {
   id: number;
-  updatedAt: number;
+  password: string;
 }

@@ -50,9 +50,9 @@ export class AuthGuard implements CanActivate {
         payload = undefined;
       }
       if (payload?.id) {
-        user = await this.usersService.findById(payload.id);
+        user = await this.usersService.findById(payload.id, true);
 
-        if (user && new Date(user.updatedAt).getTime() === payload.updatedAt) {
+        if (user && user.password === payload.password) {
           request['user'] = user;
         } else {
           token = undefined;

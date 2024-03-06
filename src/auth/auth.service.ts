@@ -47,8 +47,8 @@ export class AuthService {
     }
 
     const payload: IPayload = {
-      id: user.id,
-      updatedAt: new Date(existUser.updatedAt).getTime(),
+      id: existUser.id,
+      password: existUser.password,
     };
 
     return {

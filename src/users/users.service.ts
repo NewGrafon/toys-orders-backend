@@ -98,7 +98,7 @@ export class UsersService {
         cartToy.id === cartToyDto.id &&
         cartToy.colorCode === cartToyDto.colorCode
       ) {
-        user[index].amount += cartToyDto.amount;
+        user.cart[index].amount += cartToyDto.amount;
         toyExistInArray = true;
         return false;
       }
@@ -109,10 +109,8 @@ export class UsersService {
       user.cart.push(cartToyDto);
     }
 
-    await Promise.all([
-      this.repository.save(user),
-      this.cacheService.del(this.cacheKeys.user(userId)),
-    ]);
+    await this.repository.save(user);
+    await this.cacheService.del(this.cacheKeys.user(userId));
 
     return this.findById(userId);
   }
@@ -152,10 +150,8 @@ export class UsersService {
       return true;
     });
 
-    await Promise.all([
-      this.repository.save(user),
-      this.cacheService.del(this.cacheKeys.user(userId)),
-    ]);
+    await this.repository.save(user);
+    await this.cacheService.del(this.cacheKeys.user(userId));
 
     return this.findById(userId);
   }

@@ -23,15 +23,13 @@ import { CartToyDto as CartToyDto } from './dto/cart-toy.dto';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // need test
   @Post('change_in_cart')
   @RolesList(Role.Worker)
   changeAmountInCart(@UserId() userId: number, @Body() cartToyDto: CartToyDto) {
     return this.ordersService.changeAmountInCart(userId, cartToyDto);
   }
 
-  // need test
-  @Delete('delete_from_cart')
+  @Delete('remove_from_cart')
   @RolesList(Role.Worker)
   removeFromCart(@UserId() userId: number, @Body() cartToyDto: CartToyDto) {
     return this.ordersService.removeFromCart(userId, cartToyDto);

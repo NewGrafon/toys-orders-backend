@@ -164,6 +164,21 @@ export class UsersService {
     return this.findById(userId);
   }
 
+  async clearCart(userId): Promise<UserEntity> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new ForbiddenException(ExceptionMessages.UserNotFound);
+    }
+
+    user.cart = [];
+
+    await this.repository.save(user);
+    await this.cacheService.del(this.cacheKeys.user(userId));
+
+    return this.findById(userId);
+  }
+
   async findAll(): Promise<UserEntity[]> {
     const cachedData = await this.cacheService.get(this.cacheKeys.allUsers());
     if (cachedData) {

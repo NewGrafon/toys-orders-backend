@@ -34,6 +34,12 @@ export class UsersController {
     return this.usersService.findById(userId);
   }
 
+  @Delete('clear_cart')
+  @RolesList()
+  clearCart(@UserId() userId: number) {
+    return this.usersService.clearCart(userId);
+  }
+
   @Get('get_all')
   @RolesList(Role.Admin)
   findAll() {

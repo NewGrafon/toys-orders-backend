@@ -46,7 +46,7 @@ export class OrdersController {
   @Patch('take/:cartTimestamp')
   @RolesList(Role.Deliver)
   takeOrders(
-    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @Param('cartTimestamp') cartTimestamp: string,
     @UserId() userId: number,
   ) {
     return this.ordersService.takeOrders(userId, cartTimestamp);
@@ -56,7 +56,7 @@ export class OrdersController {
   @Patch('close/:cartTimestamp/:isFinishedNotCancel')
   @RolesList(Role.Worker, Role.Deliver)
   closeOrders(
-    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @Param('cartTimestamp') cartTimestamp: string,
     @Param('isFinishedNotCancel', ParseBoolPipe) isFinishedNotCancel: boolean,
     @UserId() userId: number,
   ) {
@@ -71,7 +71,7 @@ export class OrdersController {
   @Delete('cancel/:cartTimestamp')
   @RolesList(Role.Worker)
   cancelOrders(
-    @Param('cartTimestamp', ParseIntPipe) cartTimestamp: number,
+    @Param('cartTimestamp') cartTimestamp: string,
     @UserId() userId: number,
   ) {
     return this.ordersService.cancelOrder(cartTimestamp, userId);

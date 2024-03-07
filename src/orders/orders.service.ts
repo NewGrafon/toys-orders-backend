@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { OrderEntity } from './entities/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InsertResult, Repository, UpdateResult } from 'typeorm';
+import { InsertResult, Repository } from 'typeorm';
 import { LocalCacheService } from '../cache/local-cache.service';
 import { ICacheKeys } from '../static/interfaces/cache.interfaces';
 import { ExceptionMessages } from '../static/enums/messages.enums';
@@ -34,7 +34,7 @@ export class OrdersService {
     userId: number,
     createCartDto: CreateCartDto,
   ): Promise<OrderEntity[]> {
-    const now: number = new Date().getTime();
+    const now: Date = new Date();
 
     createCartDto = Object.assign(createCartDto, {
       creator: {
@@ -46,7 +46,7 @@ export class OrdersService {
       await Promise.all(
         createCartDto.cart.map((_toy) => {
           return this.repository.insert({
-            cartTimestamp: now,
+            cartTimestamp: now.toISOString(),
             creator: {
               id: userId,
             },
@@ -65,13 +65,14 @@ export class OrdersService {
 
     await this.cacheService.del(this.cacheKeys.allOrders());
 
-    Promise.all(
-      results.map((result) => {
+    Promise.all([
+      ...results.map((result) => {
         return this.findOneById(result.id);
       }),
-    );
+      this.usersSerice.clearCart(userId),
+    ]);
 
-    return this.findByCartTimestamp(results[0].cartTimestamp);
+    return this.findByCartTimestamp(results[0].cartTimestamp.toString());
   }
 
   async changeAmountInCart(userId: number, cartToyDto: CartToyDto) {
@@ -82,8 +83,12 @@ export class OrdersService {
     return this.usersSerice.removeFromCart(userId, cartToyDto);
   }
 
-  async takeOrders(userId: number, cartTimestamp: number): Promise<boolean> {
+  async takeOrders(userId: number, cartTimestamp: string): Promise<boolean> {
     const orders = await this.findByCartTimestamp(cartTimestamp);
+
+    if (orders.length === 0) {
+      throw new ForbiddenException(ExceptionMessages.OrderNotFound);
+    }
 
     if (orders.length > 0 && orders[0].takenBy?.id !== undefined) {
       throw new BadRequestException(ExceptionMessages.OrderAlreadyTaken);
@@ -104,8 +109,17 @@ export class OrdersService {
       }),
     );
 
-    const allPromises: Promise<void>[] = orders.map((order) => {
-      return this.cacheService.del(this.cacheKeys.orderById(order.id));
+    const timestamp = new Date(cartTimestamp);
+    const allPromises: Promise<void>[] = [];
+    orders.forEach((order) => {
+      allPromises.push(
+        this.cacheService.del(this.cacheKeys.orderById(order.id)),
+      );
+      allPromises.push(
+        this.cacheService.del(
+          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+        ),
+      );
     });
     allPromises.push(this.cacheService.del(this.cacheKeys.allOrders()));
     await Promise.all(allPromises);
@@ -114,7 +128,7 @@ export class OrdersService {
   }
 
   async closeOrders(
-    cartTimestamp: number,
+    cartTimestamp: string,
     isFinishedNotCancel: boolean,
     userId: number,
   ) {
@@ -142,8 +156,17 @@ export class OrdersService {
       }),
     );
 
-    const allPromises: Promise<void>[] = orders.map((order) => {
-      return this.cacheService.del(this.cacheKeys.orderById(order.id));
+    const timestamp = new Date(cartTimestamp);
+    const allPromises: Promise<void>[] = [];
+    orders.forEach((order) => {
+      allPromises.push(
+        this.cacheService.del(this.cacheKeys.orderById(order.id)),
+      );
+      allPromises.push(
+        this.cacheService.del(
+          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+        ),
+      );
     });
     allPromises.push(this.cacheService.del(this.cacheKeys.allOrders()));
     await Promise.all(allPromises);
@@ -151,18 +174,38 @@ export class OrdersService {
     return true;
   }
 
-  async cancelOrder(cartTimestamp: number, userId: number) {
+  async cancelOrder(cartTimestamp: string, userId: number) {
+    const timestamp = new Date(cartTimestamp);
+
     const orders = await this.findByCartTimestamp(cartTimestamp);
 
-    if (orders.length > 0 || orders[0].creator.id !== userId) {
+    if (orders.length === 0 || orders[0]?.creator?.id !== userId) {
       throw new ForbiddenException(ExceptionMessages.OrderNotFound);
     }
 
-    const allPromises: Promise<void | UpdateResult>[] = orders.map((order) => {
-      return this.cacheService.del(this.cacheKeys.orderById(order.id));
+    const allPromises: Promise<any>[] = [];
+    orders.forEach((order) => {
+      allPromises.push(
+        this.repository.update(
+          {
+            id: order.id,
+          },
+          {
+            takenBy: null,
+          },
+        ),
+      );
+      allPromises.push(
+        this.cacheService.del(this.cacheKeys.orderById(order.id)),
+      );
+      allPromises.push(
+        this.cacheService.del(
+          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+        ),
+      );
     });
     allPromises.push(this.cacheService.del(this.cacheKeys.allOrders()));
-    allPromises.push(this.repository.softDelete({ cartTimestamp }));
+    allPromises.push(this.repository.softDelete({ cartTimestamp: timestamp }));
     await Promise.all(allPromises);
 
     return true;
@@ -178,6 +221,7 @@ export class OrdersService {
       relations: {
         creator: true,
         takenBy: true,
+        toy: true,
       },
       withDeleted: true,
     });
@@ -204,7 +248,8 @@ export class OrdersService {
 
     for (const order of orders) {
       const timestamp: string = order.cartTimestamp.toString();
-      if (obj[timestamp].orders === undefined) {
+      if (obj[timestamp]?.orders === undefined) {
+        obj[timestamp] = {};
         obj[timestamp].orders = [];
       }
 
@@ -215,7 +260,7 @@ export class OrdersService {
 
     for (const key in obj) {
       groupedOrders.push({
-        cartTimestamp: Number.parseInt(key) as number,
+        cartTimestamp: new Date(key).getTime().toString(),
         orders: obj[key].orders,
       });
     }
@@ -225,9 +270,10 @@ export class OrdersService {
     return groupedOrders;
   }
 
-  async findByCartTimestamp(cartTimestamp: number): Promise<OrderEntity[]> {
+  async findByCartTimestamp(cartTimestamp: string): Promise<OrderEntity[]> {
+    const timestamp = new Date(cartTimestamp);
     const cachedData = (await this.cacheService.get(
-      this.cacheKeys.orderByCartTimestamp(cartTimestamp),
+      this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
     )) as OrderEntity[];
 
     if (cachedData) {
@@ -238,9 +284,10 @@ export class OrdersService {
       relations: {
         creator: true,
         takenBy: true,
+        toy: true,
       },
       where: {
-        cartTimestamp,
+        cartTimestamp: timestamp,
       },
       withDeleted: true,
     });
@@ -270,7 +317,7 @@ export class OrdersService {
     await Promise.all(
       orders.map((order) => {
         return this.cacheService.set(
-          this.cacheKeys.orderByCartTimestamp(order.cartTimestamp),
+          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
           order,
         );
       }),

@@ -17,7 +17,7 @@ export class OrderEntity {
   id: number;
 
   @Column({ type: 'timestamp', nullable: false, unique: false })
-  cartTimestamp: number;
+  cartTimestamp: string | number | Date;
 
   @ManyToOne(() => UserEntity, (user) => user.id, {
     onDelete: 'CASCADE',

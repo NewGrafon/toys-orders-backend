@@ -113,7 +113,14 @@ export class UsersService {
       user.cart.push(cartToyDto);
     }
 
-    await this.repository.save(user);
+    await this.repository.update(
+      {
+        id: userId,
+      },
+      {
+        cart: user.cart,
+      },
+    );
     await this.cacheService.del(this.cacheKeys.user(userId));
 
     if (amountIsZeroOrBelow) {

@@ -9,6 +9,7 @@ export enum ExceptionMessages {
   CartTimeout = 'Попытка добавить новые элементы в заказ отклоняется, если заказ был сделан более 1 минуты назад!',
   OrderNotFound = 'Заказ не найден.',
   OrdersNotFound = 'Заказы не найдены.',
+  IncorrectCloseOrdersDto = 'Incorrect CloseOrdersDto',
   OrderAlreadyTaken = 'Заказ уже взят другим пользователем.',
 }
 

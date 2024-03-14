@@ -22,8 +22,8 @@ export class LocalCacheService {
       allToys: (): string => {
         return `toy-all`;
       },
-      orderByCartTimestamp: (cartTimestamp: string | number): string => {
-        return `order-timestamp-${cartTimestamp}`;
+      ordersByCartTimestamp: (cartTimestamp: string | number): string => {
+        return `orders-timestamp-${cartTimestamp}`;
       },
       orderById: (id: string | number): string => {
         return `order-id-${id}`;

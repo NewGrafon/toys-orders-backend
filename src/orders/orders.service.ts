@@ -17,6 +17,7 @@ import { CreateCartDto } from './dto/create-cart.dto';
 import { CartToyDto } from './dto/cart-toy.dto';
 import { IOrdersByCartTimestamp } from 'src/static/interfaces/orders.interfaces';
 import { UsersService } from 'src/users/users.service';
+import { CloseOrdersDto } from './dto/close-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -117,7 +118,7 @@ export class OrdersService {
       );
       allPromises.push(
         this.cacheService.del(
-          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+          this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
         ),
       );
     });
@@ -131,6 +132,7 @@ export class OrdersService {
     cartTimestamp: string,
     isFinishedNotCancel: boolean,
     userId: number,
+    closeOrdersDto: CloseOrdersDto,
   ) {
     const orders = await this.findByCartTimestamp(cartTimestamp);
 
@@ -142,8 +144,36 @@ export class OrdersService {
       throw new ForbiddenException(ExceptionMessages.OrderNotFound);
     }
 
+    if (
+      closeOrdersDto.editedOrders.length > 0 &&
+      closeOrdersDto.editedOrders.length !== orders.length
+    ) {
+      throw new ForbiddenException(ExceptionMessages.IncorrectCloseOrdersDto);
+    }
+
     await Promise.all(
-      orders.map((order) => {
+      orders.map((order, index) => {
+        let newAmount: number;
+        const amountType = closeOrdersDto.editedOrders[index]?.type || 'all';
+        switch (amountType) {
+          case 'all': {
+            newAmount = order.amount;
+            break;
+          }
+          case 'not-all': {
+            newAmount = closeOrdersDto.editedOrders[index]?.newAmount || 0;
+            break;
+          }
+          case 'none': {
+            newAmount = 0;
+            break;
+          }
+          default: {
+            newAmount = order.amount;
+            break;
+          }
+        }
+
         return this.repository.update(
           {
             id: order.id,
@@ -151,6 +181,7 @@ export class OrdersService {
           {
             isClosed: isFinishedNotCancel,
             takenBy: isFinishedNotCancel ? order.takenBy : null,
+            amount: newAmount,
           },
         );
       }),
@@ -164,7 +195,7 @@ export class OrdersService {
       );
       allPromises.push(
         this.cacheService.del(
-          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+          this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
         ),
       );
     });
@@ -174,7 +205,7 @@ export class OrdersService {
     return true;
   }
 
-  async cancelOrder(cartTimestamp: string, userId: number) {
+  async cancelOrders(cartTimestamp: string, userId: number) {
     const timestamp = new Date(cartTimestamp);
 
     const orders = await this.findByCartTimestamp(cartTimestamp);
@@ -200,7 +231,7 @@ export class OrdersService {
       );
       allPromises.push(
         this.cacheService.del(
-          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+          this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
         ),
       );
     });
@@ -273,7 +304,7 @@ export class OrdersService {
   async findByCartTimestamp(cartTimestamp: string): Promise<OrderEntity[]> {
     const timestamp = new Date(cartTimestamp);
     const cachedData = (await this.cacheService.get(
-      this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
+      this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
     )) as OrderEntity[];
 
     if (cachedData) {
@@ -314,14 +345,12 @@ export class OrdersService {
       return order;
     });
 
-    await Promise.all(
-      orders.map((order) => {
-        return this.cacheService.set(
-          this.cacheKeys.orderByCartTimestamp(timestamp.getTime()),
-          order,
-        );
-      }),
-    );
+    await Promise.all([
+      this.cacheService.set(
+        this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
+        orders,
+      ),
+    ]);
 
     return orders;
   }

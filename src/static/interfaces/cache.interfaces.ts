@@ -7,7 +7,7 @@ export interface ICacheKeys {
 
   allToys(): string;
 
-  orderByCartTimestamp(cartTimestamp: string | number): string;
+  ordersByCartTimestamp(cartTimestamp: string | number): string;
 
   orderById(id: string | number): string;
 

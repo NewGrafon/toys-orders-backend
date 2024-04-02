@@ -10,6 +10,7 @@ import * as redisStore from 'cache-manager-redis-store';
       store: redisStore,
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT) || 6379,
+      user: 'default',
       password: process.env.REDIS_PASSWORD,
     }),
   ],

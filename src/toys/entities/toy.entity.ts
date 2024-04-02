@@ -15,7 +15,7 @@ export class ToyEntity {
   @Column({ type: 'varchar', length: 64, nullable: false })
   partName: string;
 
-  @Column({ type: 'varchar', length: 64, nullable: false })
+  @Column({ type: 'varchar', length: 64, nullable: false, unique: true })
   code: string;
 
   @CreateDateColumn()

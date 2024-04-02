@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import { ICacheKeys } from 'src/static/interfaces/cache.interfaces';
 import { LocalCacheService } from 'src/cache/local-cache.service';
 import { ExceptionMessages } from 'src/static/enums/messages.enums';
+import { readFileSync, existsSync } from 'fs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ToysService {
@@ -13,7 +15,17 @@ export class ToysService {
     @InjectRepository(ToyEntity)
     private readonly repository: Repository<ToyEntity>,
     private readonly cacheService: LocalCacheService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    setTimeout(() => {
+      if (this.configService.get('UPDATE_TOYS_FROM_FILE') !== undefined) {
+        console.log('UPDATE TOYS FROM FILE STARTED...');
+        this.updateToysFromFile().then(() => {
+          console.log('UPDATE TOYS FROM FILE END.');
+        });
+      }
+    }, 1000);
+  }
 
   readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
 
@@ -97,5 +109,27 @@ export class ToysService {
     this.findAll();
 
     return true;
+  }
+
+  async updateToysFromFile(): Promise<void> {
+    if (existsSync('../toys-orders-backend/result.json')) {
+      try {
+        const toysFromFile: { code: number; name: string }[] = JSON.parse(
+          readFileSync('../toys-orders-backend/result.json').toString(),
+        );
+        await this.repository.save(
+          toysFromFile.map((toy) => {
+            return {
+              code: toy.code.toString(),
+              partName: toy.name.toString(),
+            };
+          }),
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      console.error('FILE NOT FOUND!');
+    }
   }
 }

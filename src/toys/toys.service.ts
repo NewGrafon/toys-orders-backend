@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateToyDto } from './dto/create-toy.dto';
 import { ToyEntity } from './entities/toy.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InsertResult, Repository, UpdateResult } from 'typeorm';
 import { ICacheKeys } from 'src/static/interfaces/cache.interfaces';
 import { LocalCacheService } from 'src/cache/local-cache.service';
 import { ExceptionMessages } from 'src/static/enums/messages.enums';
@@ -142,15 +142,47 @@ export class ToysService {
         }[] = JSON.parse(
           readFileSync('../toys-orders-backend/result.json').toString(),
         );
-        await this.repository.save(
-          toysFromFile.map((toy) => {
-            return {
-              code: toy.code.toString(),
-              partName: toy.name.toString(),
-              defaultColorCodes: Array.from(new Set<number>(toy.color_codes)),
-            };
-          }),
-        );
+
+        const allToys: ToyEntity[] = await this.repository.find({
+          select: {
+            code: true,
+            defaultColorCodes: true,
+          },
+        });
+
+        const allPromises: Promise<InsertResult | UpdateResult>[] = [];
+        toysFromFile.forEach((fileToy) => {
+          const fetchedToy = allToys.find(
+            (toy) => toy.code === fileToy.code.toString(),
+          );
+          const fileDefaultColorCodes = Array.from(
+            new Set<number>(fileToy.color_codes),
+          ).filter((code) => code >= 1).sort();
+          if (!fetchedToy) {
+            allPromises.push(
+              this.repository.insert({
+                code: fileToy.code.toString(),
+                partName: fileToy.name.toString(),
+                defaultColorCodes: fileDefaultColorCodes,
+              }),
+            );
+          } else if (
+            fetchedToy.defaultColorCodes.sort() + '' !==
+            fileDefaultColorCodes.sort() + ''
+          ) {
+            allPromises.push(
+              this.repository.update(
+                {
+                  code: fetchedToy.code,
+                },
+                {
+                  defaultColorCodes: fileDefaultColorCodes,
+                }
+              )
+            );
+          }
+        });
+        await Promise.all(allPromises);
       } catch (e) {
         console.error(e);
       }

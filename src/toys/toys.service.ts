@@ -17,12 +17,11 @@ export class ToysService {
     private readonly cacheService: LocalCacheService,
     private readonly configService: ConfigService,
   ) {
-    setTimeout(() => {
+    setTimeout(async () => {
       if (this.configService.get('UPDATE_TOYS_FROM_FILE') !== undefined) {
         console.log('UPDATE TOYS FROM FILE STARTED...');
-        this.updateToysFromFile().then(() => {
-          console.log('UPDATE TOYS FROM FILE END.');
-        });
+        await this.updateToysFromFile();
+        console.log('UPDATE TOYS FROM FILE END.');
       }
     }, 1000);
   }
@@ -114,7 +113,11 @@ export class ToysService {
   async updateToysFromFile(): Promise<void> {
     if (existsSync('../toys-orders-backend/result.json')) {
       try {
-        const toysFromFile: { code: number; name: string }[] = JSON.parse(
+        const toysFromFile: {
+          code: number;
+          name: string;
+          color_codes: number[];
+        }[] = JSON.parse(
           readFileSync('../toys-orders-backend/result.json').toString(),
         );
         await this.repository.save(
@@ -122,6 +125,7 @@ export class ToysService {
             return {
               code: toy.code.toString(),
               partName: toy.name.toString(),
+              defaultColorCodes: Array.from(new Set<number>(toy.color_codes)),
             };
           }),
         );

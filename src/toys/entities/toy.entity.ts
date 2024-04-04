@@ -18,6 +18,9 @@ export class ToyEntity {
   @Column({ type: 'varchar', length: 64, nullable: false, unique: true })
   code: string;
 
+  @Column({ type: 'jsonb', nullable: true, default: [] })
+  defaultColorCodes: number[];
+
   @CreateDateColumn()
   createdAt: Date;
 

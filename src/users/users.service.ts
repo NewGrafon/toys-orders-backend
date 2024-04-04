@@ -72,7 +72,7 @@ export class UsersService {
       throw new BadRequestException(ExceptionMessages.ToyAmountIncorrect);
     }
 
-    const toy = await this.toysService.findOne(cartToyDto.id);
+    const toy = await this.toysService.findOneById(cartToyDto.id);
 
     if (!toy) {
       throw new ForbiddenException(ExceptionMessages.ToyNotFound);
@@ -134,7 +134,7 @@ export class UsersService {
     userId: number,
     cartToyDto: CartToyDto,
   ): Promise<UserEntity> {
-    const toy = await this.toysService.findOne(cartToyDto.id);
+    const toy = await this.toysService.findOneById(cartToyDto.id);
 
     if (!toy) {
       throw new ForbiddenException(ExceptionMessages.ToyNotFound);

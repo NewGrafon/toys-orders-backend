@@ -44,7 +44,7 @@ export class ToysService {
 
     await this.cacheService.del(this.cacheKeys.allToys());
 
-    return this.findOne(newToy.id);
+    return this.findOneById(newToy.id);
   }
 
   async findAll(): Promise<ToyEntity[]> {
@@ -63,9 +63,9 @@ export class ToysService {
     return toys;
   }
 
-  async findOne(id: number): Promise<ToyEntity> {
+  async findOneById(id: number): Promise<ToyEntity> {
     const cachedData = (await this.cacheService.get(
-      this.cacheKeys.toy(id),
+      this.cacheKeys.toyById(id),
     )) as ToyEntity;
 
     if (cachedData) {
@@ -80,7 +80,29 @@ export class ToysService {
       throw new ForbiddenException(ExceptionMessages.ToyNotFound);
     }
 
-    await this.cacheService.set(this.cacheKeys.toy(id), toy, 300);
+    await this.cacheService.set(this.cacheKeys.toyById(id), toy, 300);
+
+    return toy;
+  }
+
+  async findOneByCode(code: string): Promise<ToyEntity> {
+    const cachedData = (await this.cacheService.get(
+      this.cacheKeys.toyByCode(code),
+    )) as ToyEntity;
+
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const toy = await this.repository.findOneBy({
+      code,
+    });
+
+    if (!toy) {
+      throw new ForbiddenException(ExceptionMessages.ToyNotFound);
+    }
+
+    await this.cacheService.set(this.cacheKeys.toyByCode(code), toy, 300);
 
     return toy;
   }
@@ -91,7 +113,7 @@ export class ToysService {
 
   async remove(id: number) {
     const cachedData = (await this.cacheService.get(
-      this.cacheKeys.toy(id),
+      this.cacheKeys.toyById(id),
     )) as ToyEntity;
 
     const toy = cachedData ?? (await this.repository.findOneBy({ id }));

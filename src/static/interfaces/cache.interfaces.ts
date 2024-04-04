@@ -3,7 +3,9 @@ export interface ICacheKeys {
 
   allUsers(): string;
 
-  toy(id: string | number): string;
+  toyById(id: string | number): string;
+
+  toyByCode(code: string): string;
 
   allToys(): string;
 

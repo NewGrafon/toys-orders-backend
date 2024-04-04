@@ -29,7 +29,13 @@ export class ToysController {
   @Get(':id')
   @RolesList()
   findOne(@Param('id', ParseIntPipe) id: number): Promise<ToyEntity> {
-    return this.toysService.findOne(id);
+    return this.toysService.findOneById(id);
+  }
+
+  @Get('get_by_code/:code')
+  @RolesList()
+  findOneByCode(@Param('code') code: string): Promise<ToyEntity> {
+    return this.toysService.findOneByCode(code);
   }
 
   @Post('create')

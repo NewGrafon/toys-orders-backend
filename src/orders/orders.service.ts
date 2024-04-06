@@ -73,7 +73,11 @@ export class OrdersService {
       this.usersSerice.clearCart(userId),
     ]);
 
-    return this.findByCartTimestamp(results[0].cartTimestamp.toString());
+    return Promise.all(
+      results.map((order) => {
+        return this.findOneById(order.id);
+      }),
+    );
   }
 
   async changeAmountInCart(userId: number, cartToyDto: CartToyDto) {
@@ -370,6 +374,17 @@ export class OrdersService {
       },
       where: {
         id: orderId,
+      },
+      select: {
+        id: true,
+        cartTimestamp: true,
+        colorCode: true,
+        amount: true,
+        desktop: true,
+        isClosed: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
       },
       withDeleted: true,
     });

@@ -85,7 +85,7 @@ export class ToysService {
     return toy;
   }
 
-  async findOneByCode(code: string): Promise<ToyEntity> {
+  async findOneByCode(code: number): Promise<ToyEntity> {
     const cachedData = (await this.cacheService.get(
       this.cacheKeys.toyByCode(code),
     )) as ToyEntity;
@@ -152,16 +152,16 @@ export class ToysService {
 
         const allPromises: Promise<InsertResult | UpdateResult>[] = [];
         toysFromFile.forEach((fileToy) => {
-          const fetchedToy = allToys.find(
-            (toy) => toy.code === fileToy.code.toString(),
-          );
+          const fetchedToy = allToys.find((toy) => toy.code === fileToy.code);
           const fileDefaultColorCodes = Array.from(
             new Set<number>(fileToy.color_codes),
-          ).filter((code) => code >= 1).sort();
+          )
+            .filter((code) => code >= 1)
+            .sort();
           if (!fetchedToy) {
             allPromises.push(
               this.repository.insert({
-                code: fileToy.code.toString(),
+                code: fileToy.code,
                 partName: fileToy.name.toString(),
                 defaultColorCodes: fileDefaultColorCodes,
               }),
@@ -177,8 +177,8 @@ export class ToysService {
                 },
                 {
                   defaultColorCodes: fileDefaultColorCodes,
-                }
-              )
+                },
+              ),
             );
           }
         });

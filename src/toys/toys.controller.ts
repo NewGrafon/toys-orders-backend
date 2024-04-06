@@ -34,7 +34,7 @@ export class ToysController {
 
   @Get('get_by_code/:code')
   @RolesList()
-  findOneByCode(@Param('code') code: string): Promise<ToyEntity> {
+  findOneByCode(@Param('code', ParseIntPipe) code: number): Promise<ToyEntity> {
     return this.toysService.findOneByCode(code);
   }
 

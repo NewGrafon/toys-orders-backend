@@ -19,7 +19,7 @@ export class LocalCacheService {
       toyById: (id: string | number): string => {
         return `toy-id-${id}`;
       },
-      toyByCode: (code: string): string => {
+      toyByCode: (code: number): string => {
         return `toy-code-${code}`;
       },
       allToys: (): string => {

@@ -46,6 +46,12 @@ export class AuthService {
       }
     }
 
+    if (user.telegramUserId) {
+      await this.usersService.update(existUser.id, {
+        telegramUserId: user.telegramUserId,
+      });
+    }
+
     const payload: IPayload = {
       id: existUser.id,
       password: existUser.password,

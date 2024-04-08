@@ -1,4 +1,5 @@
-import { IsInt, IsString } from '@nestjs/class-validator';
+import { IsInt, IsString } from 'class-validator';
+import { IsNumber } from 'class-validator';
 
 export class LoginDto {
   @IsInt()
@@ -6,4 +7,7 @@ export class LoginDto {
 
   @IsString()
   password: string;
+
+  @IsNumber()
+  telegramUserId?: number;
 }

@@ -18,6 +18,7 @@ import { CartToyDto } from './dto/cart-toy.dto';
 import { IOrdersByCartTimestamp } from 'src/static/interfaces/orders.interfaces';
 import { UsersService } from 'src/users/users.service';
 import { CloseOrdersDto } from './dto/close-order.dto';
+import { TelegramBotService } from 'src/telegram-bot/telegram-bot.service';
 
 @Injectable()
 export class OrdersService {
@@ -26,7 +27,9 @@ export class OrdersService {
     private readonly repository: Repository<OrderEntity>,
     private readonly cacheService: LocalCacheService,
     @Inject(forwardRef(() => UsersService))
-    private readonly usersSerice: UsersService,
+    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => TelegramBotService))
+    private readonly telegramBotService: TelegramBotService,
   ) {}
 
   readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
@@ -70,7 +73,7 @@ export class OrdersService {
       ...results.map((result) => {
         return this.findOneById(result.id);
       }),
-      this.usersSerice.clearCart(userId),
+      this.usersService.clearCart(userId),
     ]);
 
     return Promise.all(
@@ -81,11 +84,11 @@ export class OrdersService {
   }
 
   async changeAmountInCart(userId: number, cartToyDto: CartToyDto) {
-    return this.usersSerice.changeAmountInCart(userId, cartToyDto);
+    return this.usersService.changeAmountInCart(userId, cartToyDto);
   }
 
   async removeFromCart(userId: number, cartToyDto: CartToyDto) {
-    return this.usersSerice.removeFromCart(userId, cartToyDto);
+    return this.usersService.removeFromCart(userId, cartToyDto);
   }
 
   async takeOrders(userId: number, cartTimestamp: string): Promise<boolean> {
@@ -99,8 +102,16 @@ export class OrdersService {
       throw new BadRequestException(ExceptionMessages.OrderAlreadyTaken);
     }
 
-    await Promise.all(
-      orders.map((order) => {
+    const workerUser = await this.usersService.findById(orders[0].creator.id);
+    const workerNotification = workerUser.telegramUserId
+      ? this.telegramBotService.sendOrderTakenByNotification(
+          workerUser.telegramUserId,
+          orders[0].cartTimestamp,
+        )
+      : async () => {};
+
+    await Promise.all([
+      ...orders.map((order) => {
         return this.repository.update(
           {
             id: order.id,
@@ -112,7 +123,8 @@ export class OrdersService {
           },
         );
       }),
-    );
+      workerNotification,
+    ]);
 
     const timestamp = new Date(cartTimestamp);
     const allPromises: Promise<void>[] = [];
@@ -155,8 +167,26 @@ export class OrdersService {
       throw new ForbiddenException(ExceptionMessages.IncorrectCloseOrdersDto);
     }
 
-    await Promise.all(
-      orders.map((order, index) => {
+    const workerUser = await this.usersService.findById(orders[0].creator.id);
+    let workerNotification;
+    if (workerUser.telegramUserId) {
+      if (isFinishedNotCancel) {
+        workerNotification =
+          this.telegramBotService.sendOrderFinishedNotification(
+            workerUser.telegramUserId,
+            orders[0].cartTimestamp,
+          );
+      } else {
+        workerNotification =
+          this.telegramBotService.sendOrderCanceledNotification(
+            workerUser.telegramUserId,
+            orders[0].cartTimestamp,
+          );
+      }
+    }
+
+    await Promise.all([
+      ...orders.map((order, index) => {
         let newAmount: number;
         const amountType = closeOrdersDto.editedOrders[index]?.type || 'all';
         switch (amountType) {
@@ -189,7 +219,8 @@ export class OrdersService {
           },
         );
       }),
-    );
+      workerNotification,
+    ]);
 
     const timestamp = new Date(cartTimestamp);
     const allPromises: Promise<void>[] = [];

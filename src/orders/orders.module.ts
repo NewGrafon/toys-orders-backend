@@ -6,6 +6,7 @@ import { OrderEntity } from './entities/order.entity';
 import { UsersModule } from '../users/users.module';
 import { LocalCacheModule } from '../cache/local-cache.module';
 import { ToysModule } from '../toys/toys.module';
+import { TelegramBotModule } from 'src/telegram-bot/telegram-bot.module';
 
 @Module({
   controllers: [OrdersController],
@@ -15,6 +16,7 @@ import { ToysModule } from '../toys/toys.module';
     LocalCacheModule,
     forwardRef(() => UsersModule),
     ToysModule,
+    forwardRef(() => TelegramBotModule),
   ],
   exports: [OrdersService],
 })

@@ -223,6 +223,7 @@ export class UsersService {
       // },
       select: {
         id: true,
+        telegramUserId: true,
         firstname: true,
         lastname: true,
         role: true,
@@ -294,6 +295,7 @@ export class UsersService {
           lastname: updateUserDto.lastname ?? user.lastname,
           role: updateUserDto.role ?? user.role,
           password: updateUserDto.password ?? user.password,
+          telegramUserId: updateUserDto.telegramUserId ?? user.telegramUserId,
         },
       ),
       this.cacheService.del(this.cacheKeys.user(userId)),

@@ -15,7 +15,7 @@ export class UserEntity {
   id: number;
 
   @Column({ type: 'float', nullable: true, default: null })
-  telegramId?: number;
+  telegramUserId?: number;
 
   @Column({ type: 'varchar', length: 32, nullable: false })
   firstname: string;

@@ -10,6 +10,7 @@ import {
 import { UserEntity } from '../../users/entities/user.entity';
 import { ToyEntity } from '../../toys/entities/toy.entity';
 import { ColorCode } from 'src/static/enums/colors-codes.enum';
+import { TimestampType } from 'src/static/types/timestamp.type';
 
 @Entity('orders')
 export class OrderEntity {
@@ -17,7 +18,7 @@ export class OrderEntity {
   id: number;
 
   @Column({ type: 'timestamp', nullable: false, unique: false })
-  cartTimestamp: string | number | Date;
+  cartTimestamp: TimestampType;
 
   @ManyToOne(() => UserEntity, (user) => user.id, {
     onDelete: 'CASCADE',

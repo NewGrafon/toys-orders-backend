@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   forwardRef,
 } from '@nestjs/common';
 import { OrderEntity } from './entities/order.entity';
@@ -19,6 +21,8 @@ import { IOrdersByCartTimestamp } from 'src/static/interfaces/orders.interfaces'
 import { UsersService } from 'src/users/users.service';
 import { CloseOrdersDto } from './dto/close-order.dto';
 import { TelegramBotService } from 'src/telegram-bot/telegram-bot.service';
+import { UserEntity } from 'src/users/entities/user.entity';
+import { Role } from 'src/static/enums/users.enum';
 
 @Injectable()
 export class OrdersService {
@@ -30,8 +34,11 @@ export class OrdersService {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => TelegramBotService))
     private readonly telegramBotService: TelegramBotService,
-  ) {}
+  ) {
+    this.timestampsTasksQueue = new OrdersTasksQueue();
+  }
 
+  readonly timestampsTasksQueue: OrdersTasksQueue;
   readonly cacheKeys: ICacheKeys = this.cacheService.cacheKeys();
 
   async confirmCart(
@@ -74,6 +81,18 @@ export class OrdersService {
         return this.findOneById(result.id);
       }),
       this.usersService.clearCart(userId),
+      ...(await this.usersService.findAll())
+        .map((user: UserEntity) => {
+          if (user.telegramUserId && user.role === Role.Deliver) {
+            return this.telegramBotService.newOrderNotification(
+              user.telegramUserId,
+              now,
+            );
+          } else {
+            return undefined;
+          }
+        })
+        .filter((promise) => promise !== undefined),
     ]);
 
     return Promise.all(
@@ -102,46 +121,49 @@ export class OrdersService {
       throw new BadRequestException(ExceptionMessages.OrderAlreadyTaken);
     }
 
-    const workerUser = await this.usersService.findById(orders[0].creator.id);
-    const workerNotification = workerUser.telegramUserId
-      ? this.telegramBotService.sendOrderTakenByNotification(
-          workerUser.telegramUserId,
-          orders[0].cartTimestamp,
-        )
-      : async () => {};
+    return await this.timestampsTasksQueue.addToQueue<boolean>(async () => {
+      // пока не нужно
+      // const workerUser = await this.usersService.findById(orders[0].creator.id);
+      // const workerNotification = workerUser.telegramUserId
+      //   ? this.telegramBotService.sendOrderTakenByNotification(
+      //       workerUser.telegramUserId,
+      //       orders[0].cartTimestamp,
+      //     )
+      //   : async () => {};
 
-    await Promise.all([
-      ...orders.map((order) => {
-        return this.repository.update(
-          {
-            id: order.id,
-          },
-          {
-            takenBy: {
-              id: userId,
+      await Promise.all([
+        ...orders.map((order) => {
+          return this.repository.update(
+            {
+              id: order.id,
             },
-          },
+            {
+              takenBy: {
+                id: userId,
+              },
+            },
+          );
+        }),
+        // workerNotification,
+      ]);
+
+      const timestamp = new Date(cartTimestamp);
+      const allPromises: Promise<void>[] = [];
+      orders.forEach((order) => {
+        allPromises.push(
+          this.cacheService.del(this.cacheKeys.orderById(order.id)),
         );
-      }),
-      workerNotification,
-    ]);
+        allPromises.push(
+          this.cacheService.del(
+            this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
+          ),
+        );
+      });
+      allPromises.push(this.cacheService.del(this.cacheKeys.allOrders()));
+      await Promise.all(allPromises);
 
-    const timestamp = new Date(cartTimestamp);
-    const allPromises: Promise<void>[] = [];
-    orders.forEach((order) => {
-      allPromises.push(
-        this.cacheService.del(this.cacheKeys.orderById(order.id)),
-      );
-      allPromises.push(
-        this.cacheService.del(
-          this.cacheKeys.ordersByCartTimestamp(timestamp.getTime()),
-        ),
-      );
-    });
-    allPromises.push(this.cacheService.del(this.cacheKeys.allOrders()));
-    await Promise.all(allPromises);
-
-    return true;
+      return true;
+    }, cartTimestamp);
   }
 
   async closeOrders(
@@ -167,23 +189,24 @@ export class OrdersService {
       throw new ForbiddenException(ExceptionMessages.IncorrectCloseOrdersDto);
     }
 
-    const workerUser = await this.usersService.findById(orders[0].creator.id);
-    let workerNotification;
-    if (workerUser.telegramUserId) {
-      if (isFinishedNotCancel) {
-        workerNotification =
-          this.telegramBotService.sendOrderFinishedNotification(
-            workerUser.telegramUserId,
-            orders[0].cartTimestamp,
-          );
-      } else {
-        workerNotification =
-          this.telegramBotService.sendOrderCanceledNotification(
-            workerUser.telegramUserId,
-            orders[0].cartTimestamp,
-          );
-      }
-    }
+    // пока не нужно
+    // const workerUser = await this.usersService.findById(orders[0].creator.id);
+    // let workerNotification;
+    // if (workerUser.telegramUserId) {
+    //   if (isFinishedNotCancel) {
+    //     workerNotification =
+    //       this.telegramBotService.sendOrderFinishedNotification(
+    //         workerUser.telegramUserId,
+    //         orders[0].cartTimestamp,
+    //       );
+    //   } else {
+    //     workerNotification =
+    //       this.telegramBotService.sendOrderCanceledNotification(
+    //         workerUser.telegramUserId,
+    //         orders[0].cartTimestamp,
+    //       );
+    //   }
+    // }
 
     await Promise.all([
       ...orders.map((order, index) => {
@@ -219,7 +242,7 @@ export class OrdersService {
           },
         );
       }),
-      workerNotification,
+      // workerNotification,
     ]);
 
     const timestamp = new Date(cartTimestamp);
@@ -453,4 +476,149 @@ export class OrdersService {
 
     return result;
   }
+}
+
+class OrdersTasksQueue {
+  constructor() {
+    this.queue = [];
+  }
+
+  private readonly queue: ITimestampScope[];
+
+  public async addToQueue<T>(fnc: Function, timestamp: string): Promise<T> {
+    if (!timestamp) {
+      throw new InternalServerErrorException();
+    }
+
+    let exist: boolean = false;
+    let nearestEmptyIndexInQueue: number = -1;
+    let queueIndex: number = -1;
+    let taskIndex: number = -1;
+
+    const newScope: ITimestampScope = {
+      timestamp,
+      tasks: [
+        {
+          function: fnc,
+          solved: false,
+        },
+      ],
+      working: false,
+    };
+
+    this.queue.every((scope: ITimestampScope, index: number) => {
+      if (nearestEmptyIndexInQueue === -1 && this.queue[index] === undefined) {
+        nearestEmptyIndexInQueue = index;
+      }
+      if (scope.timestamp === timestamp) {
+        queueIndex = index;
+        taskIndex = this.queue[index].tasks.push(newScope.tasks[0]) - 1;
+        exist = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    if (!exist) {
+      if (nearestEmptyIndexInQueue >= 0) {
+        queueIndex = nearestEmptyIndexInQueue;
+        this.queue[nearestEmptyIndexInQueue] = newScope;
+      } else {
+        queueIndex = this.queue.push(newScope) - 1;
+        taskIndex = 0;
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      this.findAndStartNotWorkingScope(queueIndex);
+      const interval = setInterval(() => {
+        if (!this.queue[queueIndex]) {
+          clearInterval(interval);
+          return reject(
+            `Timestamp Scope from this index (${queueIndex}) was been deleted!`,
+          );
+        }
+
+        if (this.queue[queueIndex].tasks[taskIndex].error) {
+          clearInterval(interval);
+          return reject(this.queue[queueIndex].tasks[taskIndex].error);
+        }
+
+        if (this.queue[queueIndex].tasks[taskIndex].solved) {
+          clearInterval(interval);
+          return resolve(this.queue[queueIndex].tasks[taskIndex].result);
+        }
+      }, 25);
+    });
+  }
+
+  private findAndStartNotWorkingScope(queueIndex: number): void {
+    if (this.queue[queueIndex].working) {
+      return;
+    }
+
+    this.queue[queueIndex].working = true;
+
+    this.queue[queueIndex].tasks.every((task: ITimestampFunction, index) => {
+      if (task.solved) {
+        return true;
+      }
+
+      task
+        .function()
+        .then((result: any) => {
+          this.queue[queueIndex].tasks[index].result = result;
+        })
+        .catch((err: any) => {
+          this.queue[queueIndex].tasks[index].error = err;
+        })
+        .finally(() => {
+          this.queue[queueIndex].tasks[index].solved = true;
+          let allSolved: boolean = true;
+          this.queue[queueIndex].tasks.every((task) => {
+            if (task.solved === false) {
+              allSolved = false;
+              return false;
+            }
+
+            return true;
+          });
+
+          this.queue[queueIndex].working = false;
+
+          if (!allSolved) {
+            this.findAndStartNotWorkingScope(queueIndex);
+          }
+        });
+
+      return false;
+    });
+  }
+
+  public removeFromQueue(timestamp: string): void {
+    let index: number;
+    this.queue.every((scope, _index) => {
+      if (scope.timestamp === timestamp) {
+        index = _index;
+      }
+    });
+
+    if (index) {
+      delete this.queue[index];
+    }
+  }
+}
+
+interface ITimestampScope {
+  timestamp: string;
+  tasks: ITimestampFunction[];
+  working: boolean;
+}
+
+interface ITimestampFunction {
+  function: Function;
+  solved: boolean;
+  result?: any;
+  error?: any;
 }

@@ -38,10 +38,20 @@ export class TelegramBotService {
   //     this.previousCheckDate = new Date().getTime();
   // }
 
+  async newOrderNotification(
+    telegramUserId: number,
+    date: Date,
+  ): Promise<void> {
+    const message: string = `Появился новый заказ (${dateFormatToString(
+      date,
+    )})`;
+    this.bot.sendMessage(telegramUserId, message);
+  }
+
   async sendOrderTakenByNotification(
     telegramUserId: number,
     cartTimestamp: TimestampType,
-  ) {
+  ): Promise<void> {
     const message: string = `Ваш заказ от даты "${dateFormatToString(
       cartTimestamp as Date,
     )}" взят в работу.`;
@@ -51,7 +61,7 @@ export class TelegramBotService {
   async sendOrderFinishedNotification(
     telegramUserId: number,
     cartTimestamp: TimestampType,
-  ) {
+  ): Promise<void> {
     const message: string = `Ваш заказ от даты "${dateFormatToString(
       cartTimestamp as Date,
     )}" завершен.`;
@@ -61,7 +71,7 @@ export class TelegramBotService {
   async sendOrderCanceledNotification(
     telegramUserId: number,
     cartTimestamp: TimestampType,
-  ) {
+  ): Promise<void> {
     const message: string = `Доставщик, что взял Ваш заказ от даты "${dateFormatToString(
       cartTimestamp as Date,
     )}", отказался от него.`;
